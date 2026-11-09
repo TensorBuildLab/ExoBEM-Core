@@ -60,4 +60,5 @@ Plots: `cases/*/comparison.png`; numbers: `cases/*/comparison.json`.
 
 ## 3. Unit tests
 
-The full EnergyPlus unit-test suite (`energyplus_tests.exe`) is run on the fork; see the results section below.
+The full EnergyPlus unit-test suite (`energyplus_tests.exe`, built with `BUILD_TESTING=ON`) passes on the fork:
+**2379 tests from 33 test suites, 2379 passed, 0 failed** (3.1 min).
