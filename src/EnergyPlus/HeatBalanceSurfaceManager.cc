@@ -128,6 +128,7 @@
 #include <EnergyPlus/WindowManagerExteriorData.hh>
 #include <EnergyPlus/WindowManagerExteriorThermal.hh>
 #include <EnergyPlus/ZoneTempPredictorCorrector.hh>
+#include <EnergyPlus/PlanetaryBody.hh>
 
 namespace EnergyPlus::HeatBalanceSurfaceManager {
 
@@ -7822,9 +7823,13 @@ void CalcHeatBalanceOutsideSurf(EnergyPlusData &state,
                                 Surface(SurfNum).HeatTransferAlgorithm == DataSurfaces::HeatTransferModel::HAMT) {
                                 // Set variables used in the FD moisture balance and HAMT
                                 state.dataMstBal->TempOutsideAirFD(SurfNum) = TempExt;
+                                state.dataMstBal->HConvExtFD(SurfNum) = state.dataHeatBalSurf->SurfHConvExt(SurfNum);
+                                if (state.dataPlanet->active) { // ExoBEM-Core: no outdoor moisture exchange off-Earth
+                                    state.dataMstBal->RhoVaporAirOut(SurfNum) = 0.0;
+                                    state.dataMstBal->HMassConvExtFD(SurfNum) = 0.0;
+                                } else {
                                 state.dataMstBal->RhoVaporAirOut(SurfNum) = Psychrometrics::PsyRhovFnTdbWPb(
                                     state.dataMstBal->TempOutsideAirFD(SurfNum), state.dataEnvrn->OutHumRat, state.dataEnvrn->OutBaroPress);
-                                state.dataMstBal->HConvExtFD(SurfNum) = state.dataHeatBalSurf->SurfHConvExt(SurfNum);
                                 state.dataMstBal->HMassConvExtFD(SurfNum) =
                                     state.dataMstBal->HConvExtFD(SurfNum) /
                                     ((Psychrometrics::PsyRhoAirFnPbTdbW(state,
@@ -7844,6 +7849,7 @@ void CalcHeatBalanceOutsideSurf(EnergyPlusData &state,
                                 if (state.dataMstBal->RhoVaporAirOut(SurfNum) > RhoVaporSat) {
                                     state.dataMstBal->RhoVaporAirOut(SurfNum) = RhoVaporSat;
                                 }
+                                } // ExoBEM-Core
                                 state.dataMstBal->HSkyFD(SurfNum) = state.dataHeatBalSurf->SurfHSkyExt(SurfNum);
                                 state.dataMstBal->HGrndFD(SurfNum) = state.dataHeatBalSurf->SurfHGrdExt(SurfNum);
                                 state.dataMstBal->HAirFD(SurfNum) = state.dataHeatBalSurf->SurfHAirExt(SurfNum);
@@ -9821,7 +9827,7 @@ void CalcOutsideSurfTemp(EnergyPlusData &state,
     }
 
     Real64 TSky = state.dataEnvrn->SkyTemp;
-    Real64 TGround = state.dataEnvrn->OutDryBulbTemp;
+    Real64 TGround = Planetary::groundLongwaveTempC(state, state.dataEnvrn->OutDryBulbTemp); // ExoBEM-Core
     Real64 TSrdSurfs = 0.0;
 
     if (surface.SurfHasSurroundingSurfProperty) {

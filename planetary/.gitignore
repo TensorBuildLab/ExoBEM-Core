@@ -1,0 +1,3 @@
+*.log
+cases/*/python_ref.npz
+__pycache__/

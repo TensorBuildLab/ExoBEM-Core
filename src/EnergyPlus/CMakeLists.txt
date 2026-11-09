@@ -478,6 +478,8 @@ set(SRC
     PhotovoltaicThermalCollectors.hh
     Photovoltaics.cc
     Photovoltaics.hh
+    PlanetaryBody.cc
+    PlanetaryBody.hh
     PierceSurface.hh
     PipeHeatTransfer.cc
     PipeHeatTransfer.hh

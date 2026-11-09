@@ -64,6 +64,7 @@
 #include <EnergyPlus/UtilityRoutines.hh>
 #include <EnergyPlus/WindowManager.hh>
 #include <EnergyPlus/ZoneTempPredictorCorrector.hh>
+#include <EnergyPlus/PlanetaryBody.hh>
 
 namespace EnergyPlus::DataSurfaces {
 
@@ -625,7 +626,7 @@ void CheckSurfaceOutBulbTempAt(EnergyPlusData &state)
     Real64 minBulb = 0.0;
     for (int SurfNum = 1; SurfNum <= state.dataSurface->TotSurfaces; SurfNum++) {
         minBulb = min(minBulb, state.dataSurface->SurfOutDryBulbTemp(SurfNum), state.dataSurface->SurfOutWetBulbTemp(SurfNum));
-        if (minBulb < -100.0) {
+        if (minBulb < -100.0 && !state.dataPlanet->active) { // ExoBEM-Core
             SetOutBulbTempAt_error(state, "Surface", state.dataSurface->Surface(SurfNum).Centroid.z, state.dataSurface->Surface(SurfNum).Name);
         }
     }

@@ -51,6 +51,7 @@
 // EnergyPlus Headers
 #include <EnergyPlus/Data/CommonIncludes.hh>
 #include <EnergyPlus/Data/EnergyPlusData.hh>
+#include <EnergyPlus/PlanetaryBody.hh> // ExoBEM-Core
 
 namespace EnergyPlus {
 
@@ -200,6 +201,7 @@ EnergyPlusData::EnergyPlusData()
     this->dataOutsideEnergySrcs = std::make_unique<OutsideEnergySourcesData>();
     this->dataPackagedThermalStorageCoil = std::make_unique<PackagedThermalStorageCoilData>();
     this->dataPhotovoltaic = std::make_unique<PhotovoltaicsData>();
+    this->dataPlanet = std::make_unique<PlanetaryData>();
     this->dataPhotovoltaicState = std::make_unique<PhotovoltaicStateData>();
     this->dataPhotovoltaicThermalCollector = std::make_unique<PhotovoltaicThermalCollectorsData>();
     this->dataPipeHT = std::make_unique<PipeHeatTransferData>();
@@ -460,6 +462,7 @@ void EnergyPlusData::clear_state()
     this->dataOutsideEnergySrcs->clear_state();
     this->dataPackagedThermalStorageCoil->clear_state();
     this->dataPhotovoltaic->clear_state();
+    this->dataPlanet->clear_state();
     this->dataPhotovoltaicState->clear_state();
     this->dataPhotovoltaicThermalCollector->clear_state();
     this->dataPipeHT->clear_state();
@@ -736,6 +739,7 @@ void EnergyPlusData::init_constant_state(EnergyPlusData &state)
     this->dataOutsideEnergySrcs->init_constant_state(state);
     this->dataPackagedThermalStorageCoil->init_constant_state(state);
     this->dataPhotovoltaic->init_constant_state(state);
+    this->dataPlanet->init_constant_state(state);
     this->dataPhotovoltaicState->init_constant_state(state);
     this->dataPhotovoltaicThermalCollector->init_constant_state(state);
     this->dataPipeHT->init_constant_state(state);
@@ -1001,6 +1005,7 @@ void EnergyPlusData::init_state(EnergyPlusData &state)
     this->dataOutsideEnergySrcs->init_state(state);
     this->dataPackagedThermalStorageCoil->init_state(state);
     this->dataPhotovoltaic->init_state(state);
+    this->dataPlanet->init_state(state);
     this->dataPhotovoltaicState->init_state(state);
     this->dataPhotovoltaicThermalCollector->init_state(state);
     this->dataPipeHT->init_state(state);

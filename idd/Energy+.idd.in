@@ -1039,6 +1039,156 @@ Site:Location,
        \key No
        \default No
 
+Site:PlanetaryBody,
+       \memo ExoBEM-Core planetary mode. Selects the celestial body the building (habitat) is on and the
+       \memo parameters of its environment. With Body = Earth (or without this object) the program behaves
+       \memo exactly like the unmodified engine. With Moon or Mars the weather file supplies only the calendar
+       \memo and the location; solar position, solar and long-wave radiation, outdoor (ambient) conditions and
+       \memo the regolith (ground) temperatures are generated internally for the body. Zone air is at the cabin
+       \memo pressure. Objects that need outdoor air or Earth weather are rejected.
+       \unique-object
+       \min-fields 2
+  A1 , \field Name
+       \required-field
+       \type alpha
+  A2 , \field Body
+       \type choice
+       \key Earth
+       \key Moon
+       \key Mars
+       \default Earth
+  A3 , \field Clock
+       \note EarthClock: an hour is 3600 s and a day 86400 s (UTC); the Sun moves at the body's synodic rate.
+       \type choice
+       \key EarthClock
+       \default EarthClock
+  N1 , \field Reference Year
+       \note Calendar year (UTC) of the first simulated day; the Month and Day of each simulated day come from
+       \note the run period. Day boundaries are 00:00 UTC.
+       \type integer
+       \minimum 1950
+       \maximum 2200
+       \default 2030
+  N2 , \field Gravity
+       \units m/s2
+       \type real
+       \minimum> 0.0
+       \autocalculatable
+       \default autocalculate
+       \note autocalculate: Earth 9.807, Moon 1.625, Mars 3.721
+  N3 , \field Cabin Pressure
+       \units Pa
+       \type real
+       \minimum 1000.0
+       \maximum 120000.0
+       \default 70300.0
+       \note Total pressure of the habitat atmosphere (zone air). Used for all zone and HVAC air properties.
+  N4 , \field Cabin Oxygen Mole Fraction
+       \type real
+       \minimum 0.0
+       \maximum 1.0
+       \default 0.265
+       \note Used by the interior convection correlation (gas properties).
+  N5 , \field Cabin Air Velocity
+       \units m/s
+       \type real
+       \minimum 0.0
+       \default 0.15
+       \note Mean air speed over interior surfaces for forced convection (ISS requirement 0.076-0.2 m/s).
+  N6 , \field Convection Vertical Length Scale
+       \units m
+       \type real
+       \minimum> 0.0
+       \autocalculatable
+       \default autocalculate
+       \note Characteristic length of vertical and curved surfaces for natural convection; autocalculate uses
+       \note the square root of the surface area.
+  N7 , \field Horizon Elevation Angle
+       \units deg
+       \type real
+       \minimum -10.0
+       \maximum 30.0
+       \default 0.0
+       \note Uniform local horizon. Negative values describe an elevated site (e.g. a polar ridge, -1.65).
+  N8 , \field Regolith Thermal Inertia
+       \units J/m2-K-s0.5
+       \type real
+       \minimum> 0.0
+       \autocalculatable
+       \default autocalculate
+       \note Mars only (homogeneous column). autocalculate: 350. The Moon uses the Hayne et al. (2017) model.
+  N9 , \field Regolith Albedo
+       \type real
+       \minimum 0.0
+       \maximum 1.0
+       \autocalculatable
+       \default autocalculate
+       \note autocalculate: Moon 0.12 (plus Hayne incidence-angle terms), Mars 0.14
+  N10, \field Regolith Emissivity
+       \type real
+       \minimum> 0.0
+       \maximum 1.0
+       \autocalculatable
+       \default autocalculate
+       \note autocalculate: Moon 0.95, Mars 0.97
+  N11, \field Regolith Spin Up Cycles
+       \type integer
+       \minimum 0
+       \autocalculatable
+       \default autocalculate
+       \note Number of solar days the regolith column is cycled before the run starts.
+       \note autocalculate: Moon 6 lunations, Mars 30 sols
+  N12, \field Deep Regolith Depth
+       \units m
+       \type real
+       \minimum> 0.0
+       \default 3.0
+       \note Depth whose mean temperature is used as the deep-ground boundary (Ground outside boundary condition).
+  N13, \field Mars Mean Surface Pressure
+       \units Pa
+       \type real
+       \minimum 100.0
+       \maximum 1500.0
+       \default 710.0
+  A4 , \field Mars Dust Optical Depth Model
+       \type choice
+       \key Climatology
+       \key Constant
+       \default Climatology
+  N14, \field Mars Constant Dust Optical Depth
+       \type real
+       \minimum 0.0
+       \maximum 10.0
+       \default 0.5
+  N15, \field Mars Dust Storm Start Solar Longitude
+       \units deg
+       \type real
+       \minimum 0.0
+       \maximum 360.0
+       \default 0.0
+  N16, \field Mars Dust Storm End Solar Longitude
+       \units deg
+       \type real
+       \minimum 0.0
+       \maximum 360.0
+       \default 0.0
+  N17, \field Mars Dust Storm Peak Optical Depth
+       \type real
+       \minimum 0.0
+       \maximum 10.0
+       \default 0.0
+       \note 0 = no storm
+  N18, \field Mars Mean Wind Speed
+       \units m/s
+       \type real
+       \minimum 0.0
+       \default 3.2
+  N19; \field Mars Diurnal Wind Speed Amplitude
+       \units m/s
+       \type real
+       \minimum 0.0
+       \default 2.0
+
 Site:VariableLocation,
        \memo Captures the scheduling of a moving/reorienting building, or more likely a vessel
        \unique-object

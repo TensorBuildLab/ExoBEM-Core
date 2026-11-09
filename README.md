@@ -1,3 +1,17 @@
+ExoBEM-Core: planetary building energy simulation (research fork)
+==========
+
+**ExoBEM-Core** is a research fork of EnergyPlus(TM) v26.2.0 that simulates pressurized habitats on the Moon and Mars. It is **not** EnergyPlus and is not endorsed by the U.S. DOE, the National Laboratory of the Rockies (formerly NREL) or the EnergyPlus developers; it is distributed under the original license in `LICENSE.txt`.
+
+* What it adds, how to build and run it: [planetary/README.md](planetary/README.md)
+* Design and code audit: [planetary/DESIGN.md](planetary/DESIGN.md), [planetary/audit/](planetary/audit/)
+* Verification (Earth bit-for-bit, Moon/Mars vs Python ExoBEM): [planetary/VERIFICATION.md](planetary/VERIFICATION.md)
+* Lightweight Python companion: [TensorBuildLab/ExoBEM](https://github.com/TensorBuildLab/ExoBEM)
+
+The original EnergyPlus README follows.
+
+---
+
 EnergyPlus [![](https://img.shields.io/github/release/NatLabRockies/energyplus.svg)](https://github.com/NatLabRockies/EnergyPlus/releases/latest)
 ==========
 

@@ -207,6 +207,7 @@ extern "C" {
 #include <EnergyPlus/ZoneContaminantPredictorCorrector.hh>
 #include <EnergyPlus/ZoneEquipmentManager.hh>
 #include <EnergyPlus/ZoneTempPredictorCorrector.hh>
+#include <EnergyPlus/PlanetaryBody.hh>
 namespace EnergyPlus {
 namespace SimulationManager {
 
@@ -737,6 +738,10 @@ namespace SimulationManager {
         int Item;
 
         ErrorsFound = false;
+
+        // ExoBEM-Core: planetary body first (it changes how the rest of the input is interpreted)
+        Planetary::GetInput(state);
+        Planetary::ValidateInput(state);
 
         CurrentModuleObject = "Version";
         Num = state.dataInputProcessing->inputProcessor->getNumObjectsFound(state, CurrentModuleObject);

@@ -86,6 +86,7 @@
 #include <EnergyPlus/UtilityRoutines.hh>
 #include <EnergyPlus/Vectors.hh>
 #include <EnergyPlus/ZoneTempPredictorCorrector.hh>
+#include <EnergyPlus/PlanetaryBody.hh>
 
 namespace EnergyPlus::Convect {
 
@@ -359,6 +360,11 @@ void InitIntConvCoeff(EnergyPlusData &state,
                 } break;
                 }
 
+                if (state.dataPlanet->active) { // ExoBEM-Core: cabin gas, cabin pressure, body gravity
+                    state.dataHeatBalSurf->SurfHConvInt(SurfNum) =
+                        Planetary::interiorConvection(state, SurfNum, SurfaceTemperatures(SurfNum), spaceMAT);
+                }
+
                 if (state.dataSurface->SurfEMSOverrideIntConvCoef(SurfNum)) {
                     state.dataHeatBalSurf->SurfHConvInt(SurfNum) = state.dataSurface->SurfEMSValueForIntConvCoef(SurfNum);
                     if (Surface(SurfNum).ExtBoundCond == DataSurfaces::KivaFoundation) {
@@ -445,6 +451,9 @@ void InitExtConvCoeff(EnergyPlusData &state,
     Real64 TSurf = TempExt + Constant::Kelvin;
     Real64 TSky = state.dataEnvrn->SkyTempKelvin;
     Real64 TGround = TAir;
+    if (state.dataPlanet->active) { // ExoBEM-Core: ground long-wave from the regolith surface
+        TGround = state.dataPlanet->groundSurfCurrentC + Constant::Kelvin;
+    }
     HSrdSurf = 0.0;
 
     if (surface.SurfHasSurroundingSurfProperty) {
@@ -645,6 +654,10 @@ void InitExtConvCoeff(EnergyPlusData &state,
     default: {
         ShowFatalError(state, std::format("InitExtConvection Coefficients: invalid parameter -- outside convection type, Surface={}", surface.Name));
     } break;
+    }
+
+    if (state.dataPlanet->active) { // ExoBEM-Core: vacuum (Moon) or thin CO2 (Mars) exterior convection
+        HExt = Planetary::exteriorConvection(state, SurfNum, TSurf, TAir);
     }
 
     if (state.dataSurface->SurfEMSOverrideExtConvCoef(SurfNum)) {

@@ -93,6 +93,7 @@
 #include <EnergyPlus/WeatherManager.hh>
 #include <EnergyPlus/WindowManager.hh>
 #include <EnergyPlus/ZoneEquipmentManager.hh>
+#include <EnergyPlus/PlanetaryBody.hh>
 
 namespace EnergyPlus {
 
@@ -327,6 +328,9 @@ namespace SurfaceGeometry {
             auto &thisSurface = state.dataSurface->Surface(SurfNum);
 
             state.dataSurface->SurfAirSkyRadSplit(SurfNum) = std::sqrt(0.5 * (1.0 + thisSurface.CosTilt));
+            if (state.dataPlanet->active) { // ExoBEM-Core: no atmospheric long-wave split off-Earth
+                state.dataSurface->SurfAirSkyRadSplit(SurfNum) = 1.0;
+            }
 
             // Set flag that determines whether a surface is a shadowing surface
             thisSurface.IsShadowing = false;

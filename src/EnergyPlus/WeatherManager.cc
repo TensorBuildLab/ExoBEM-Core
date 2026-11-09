@@ -87,6 +87,7 @@
 #include <EnergyPlus/Vectors.hh>
 #include <EnergyPlus/WaterManager.hh>
 #include <EnergyPlus/WeatherManager.hh>
+#include <EnergyPlus/PlanetaryBody.hh>
 
 namespace EnergyPlus {
 
@@ -2025,6 +2026,7 @@ namespace Weather {
         state.dataEnvrn->EquationOfTime = state.dataWeather->TodayVariables.EquationOfTime;
         state.dataEnvrn->CosSolarDeclinAngle = state.dataWeather->TodayVariables.CosSolarDeclinAngle;
         state.dataEnvrn->SinSolarDeclinAngle = state.dataWeather->TodayVariables.SinSolarDeclinAngle;
+        Planetary::AdvanceDay(state); // ExoBEM-Core
     }
 
     void SetCurrentWeather(EnergyPlusData &state)
@@ -2123,6 +2125,7 @@ namespace Weather {
         }
 
         // Humidity Ratio and Wet Bulb are derived
+        if (!state.dataPlanet->active) { // ExoBEM-Core: no outdoor moist air off-Earth
         state.dataEnvrn->OutHumRat = Psychrometrics::PsyWFnTdbRhPb(
             state, state.dataEnvrn->OutDryBulbTemp, state.dataEnvrn->OutRelHumValue, state.dataEnvrn->OutBaroPress, RoutineName);
         state.dataEnvrn->OutWetBulbTemp =
@@ -2137,6 +2140,7 @@ namespace Weather {
         if (state.dataEnvrn->OutDewPointTemp > state.dataEnvrn->OutWetBulbTemp) {
             state.dataEnvrn->OutDewPointTemp = state.dataEnvrn->OutWetBulbTemp;
         }
+        } // ExoBEM-Core
 
         if ((state.dataGlobal->KindOfSim == Constant::KindOfSim::DesignDay) ||
             (state.dataGlobal->KindOfSim == Constant::KindOfSim::HVACSizeDesignDay)) {
@@ -2239,9 +2243,12 @@ namespace Weather {
             state.dataEnvrn->GndSolarRad = 0.0;
         }
 
+        if (!state.dataPlanet->active) { // ExoBEM-Core
         state.dataEnvrn->OutEnthalpy = Psychrometrics::PsyHFnTdbW(state.dataEnvrn->OutDryBulbTemp, state.dataEnvrn->OutHumRat);
         state.dataEnvrn->OutAirDensity =
             Psychrometrics::PsyRhoAirFnPbTdbW(state, state.dataEnvrn->OutBaroPress, state.dataEnvrn->OutDryBulbTemp, state.dataEnvrn->OutHumRat);
+        }
+        Planetary::SetCurrentWeather(state); // ExoBEM-Core: ambient pressure, regolith, albedo
 
         if (state.dataEnvrn->OutDryBulbTemp < state.dataEnvrn->OutWetBulbTemp) {
             state.dataEnvrn->OutWetBulbTemp = state.dataEnvrn->OutDryBulbTemp;
@@ -2282,6 +2289,8 @@ namespace Weather {
         // distributed only EPW files are allowed.
 
         ReadEPlusWeatherForDay(state, DayToRead, Environ, BackSpaceAfterRead);
+        // ExoBEM-Core: overwrite the weather-file values with the planetary environment
+        Planetary::FillTomorrow(state, state.dataGlobal->BeginEnvrnFlag ? 1 : state.dataGlobal->DayOfSim + 1);
     }
 
     void ReadEPlusWeatherForDay(EnergyPlusData &state,
@@ -4257,7 +4266,8 @@ namespace Weather {
         EP_SIZE_CHECK(SUNCOS, 3); // NOLINT(misc-static-assert)
 
         // COMPUTE THE HOUR ANGLE
-        Real64 H = (15.0 * (12.0 - (TimeValue + EqOfTime)) + (state.dataEnvrn->TimeZoneMeridian - state.dataEnvrn->Longitude)) * Constant::DegToRad;
+        Real64 H = (state.dataEnvrn->HourAngleRate * (12.0 - (TimeValue + EqOfTime)) + (state.dataEnvrn->TimeZoneMeridian - state.dataEnvrn->Longitude)) *
+                   Constant::DegToRad; // ExoBEM-Core: rate = 15 deg/h on Earth
         Real64 COSH = std::cos(H);
         // COMPUTE THE COSINE OF THE SOLAR ZENITH ANGLE.
         // This is also the Sine of the Solar Altitude Angle
@@ -4289,13 +4299,16 @@ namespace Weather {
 
         // COMPUTE THE HOUR ANGLE
         if (state.dataGlobal->TimeStepsInHour != 1) {
-            state.dataWeather->HrAngle = (15.0 * (12.0 - (state.dataGlobal->CurrentTime + state.dataWeather->TodayVariables.EquationOfTime)) +
+            state.dataWeather->HrAngle = (state.dataEnvrn->HourAngleRate * (12.0 - (state.dataGlobal->CurrentTime + state.dataWeather->TodayVariables.EquationOfTime)) +
                                           (state.dataEnvrn->TimeZoneMeridian - state.dataEnvrn->Longitude));
         } else {
             state.dataWeather->HrAngle =
-                (15.0 *
+                (state.dataEnvrn->HourAngleRate *
                      (12.0 - ((state.dataGlobal->CurrentTime + state.dataEnvrn->TS1TimeOffset) + state.dataWeather->TodayVariables.EquationOfTime)) +
                  (state.dataEnvrn->TimeZoneMeridian - state.dataEnvrn->Longitude));
+        }
+        if (state.dataPlanet->active) { // ExoBEM-Core: keep the hour angle in (-180, 180] for the azimuth sign
+            state.dataWeather->HrAngle = std::remainder(state.dataWeather->HrAngle, 360.0);
         }
         Real64 H = state.dataWeather->HrAngle * Constant::DegToRad;
 
@@ -4476,6 +4489,11 @@ namespace Weather {
             state.dataEnvrn->StdBaroPress = DataEnvironment::StdPressureSeaLevel * std::pow(1.0 - 2.25577e-05 * state.dataEnvrn->Elevation, 5.2559);
             state.dataEnvrn->StdRhoAir = Psychrometrics::PsyRhoAirFnPbTdbW(
                 state, state.dataEnvrn->StdBaroPress, DataPrecisionGlobals::constant_twenty, DataPrecisionGlobals::constant_zero);
+            if (state.dataPlanet->active) { // ExoBEM-Core: standard conditions are cabin conditions
+                state.dataEnvrn->StdBaroPress = state.dataPlanet->cabinPressure;
+                state.dataEnvrn->StdRhoAir = Psychrometrics::PsyRhoAirFnPbTdbW(
+                    state, state.dataEnvrn->StdBaroPress, DataPrecisionGlobals::constant_twenty, DataPrecisionGlobals::constant_zero);
+            }
             // Write Final Location Information to the initialization output file
             static constexpr std::string_view LocHdFormat(
                 "! <Site:Location>, Location Name, Latitude {N+/S- Deg}, Longitude {E+/W- Deg},  Time Zone Number "

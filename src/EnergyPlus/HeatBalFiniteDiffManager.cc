@@ -80,6 +80,7 @@
 #include <EnergyPlus/PluginManager.hh>
 #include <EnergyPlus/UtilityRoutines.hh>
 #include <EnergyPlus/ZoneTempPredictorCorrector.hh>
+#include <EnergyPlus/PlanetaryBody.hh>
 
 namespace EnergyPlus {
 
@@ -441,6 +442,51 @@ namespace HeatBalFiniteDiffManager {
         return maxTotalProps;
     }
 
+    // ExoBEM-Core: steady conduction profile through a CondFD construction between the mean outer-face temperature
+    // (planetary environment) and an inside-face temperature tIn; conductivity follows each layer's k(T) table.
+    static bool planetarySteadyProfile(EnergyPlusData &state, int SurfNum, Real64 tIn, std::vector<Real64> &prof)
+    {
+        auto &s_hbfd = state.dataHeatBalFiniteDiffMgr;
+        int const ConstrNum = state.dataSurface->Surface(SurfNum).Construction;
+        Real64 const tOut = Planetary::meanOuterFaceTempC(state, SurfNum);
+        auto const &cFD = s_hbfd->ConstructFD(ConstrNum);
+        auto const &con = state.dataConstruction->Construct(ConstrNum);
+        int const nT = cFD.TotNodes + 1;
+        if (tOut <= -900.0 || nT < 2) return false;
+        std::vector<int> layerOf(nT + 1, con.TotLayers);
+        int node = 0;
+        for (int Layer = 1; Layer <= con.TotLayers; ++Layer) {
+            for (int ln = 1; ln <= cFD.NodeNumPoint(Layer); ++ln) {
+                ++node;
+                if (node <= nT) layerOf[node] = Layer;
+            }
+        }
+        prof.assign(nT, 0.0);
+        for (int i = 0; i < nT; ++i) {
+            prof[i] = tOut + (tIn - tOut) * Real64(i) / Real64(nT - 1);
+        }
+        std::vector<Real64> R(nT + 1, 0.0);
+        for (int iter = 0; iter < 6; ++iter) {
+            for (int i = 1; i < nT; ++i) { // segment between node i and i+1 lies in the layer of node i
+                int const Layer = layerOf[i];
+                auto const *mat = state.dataMaterial->materials(con.LayerPoint(Layer));
+                auto const &matFD = s_hbfd->MaterialFD(con.LayerPoint(Layer));
+                Real64 k = mat->Conductivity;
+                auto const &tc = matFD.TempCond;
+                if (!mat->ROnly && tc.size() >= 6) {
+                    Real64 const l = tc.index(2, 1);
+                    if (tc[l] + tc[l + 1] + tc[l + 2] >= 0.0) k = terpld(tc, 0.5 * (prof[i - 1] + prof[i]), 1, 2);
+                }
+                R[i + 1] = R[i] + cFD.DelX(Layer) / std::max(k, 1e-12);
+            }
+            Real64 const Rtot = std::max(R[nT], 1e-12);
+            for (int i = 1; i <= nT; ++i) {
+                prof[i - 1] = tOut + (tIn - tOut) * R[i] / Rtot;
+            }
+        }
+        return true;
+    }
+
     void InitHeatBalFiniteDiff(EnergyPlusData &state)
     {
 
@@ -520,12 +566,56 @@ namespace HeatBalFiniteDiffManager {
                 state.dataMstBal->HSkyFD(SurfNum) = 0.0;
                 state.dataMstBal->HGrndFD(SurfNum) = 0.0;
                 state.dataMstBal->HAirFD(SurfNum) = 0.0;
+
+                // ExoBEM-Core: start from the steady conduction profile between the mean outer-face temperature and the
+                // initial zone temperature; a 1 m regolith cover needs months to years to settle (corrected after warm-up)
+                if (state.dataPlanet->active && state.dataPlanet->generatedEnvrn >= 0) {
+                    std::vector<Real64> prof;
+                    if (planetarySteadyProfile(state, SurfNum, TempInitValue, prof)) {
+                        for (int i = 1; i <= int(prof.size()); ++i) {
+                            Real64 const Ti = prof[i - 1];
+                            thisSurface.T(i) = thisSurface.TOld(i) = thisSurface.TT(i) = Ti;
+                            thisSurface.TD(i) = thisSurface.TDT(i) = thisSurface.TDTLast(i) = Ti;
+                            thisSurface.TDOld(i) = thisSurface.TDreport(i) = Ti;
+                        }
+                    }
+                }
             }
+            state.dataPlanet->condFDCorrected = false;
             s_hbfd->WarmupSurfTemp = 0;
             s_hbfd->MyEnvrnFlag = false;
         }
         if (!state.dataGlobal->BeginEnvrnFlag) {
             s_hbfd->MyEnvrnFlag = true;
+        }
+
+        // ExoBEM-Core: after warm-up the inside faces sit at their real temperature; shift the deep part of each start-up
+        // profile accordingly (the correction is zero at the outer face, so the converged day/night structure is kept)
+        if (state.dataPlanet->active && !state.dataGlobal->WarmupFlag && !state.dataPlanet->condFDCorrected) {
+            state.dataPlanet->condFDCorrected = true;
+            for (int SurfNum = 1; SurfNum <= state.dataSurface->TotSurfaces; ++SurfNum) {
+                auto const &surf = state.dataSurface->Surface(SurfNum);
+                if (surf.HeatTransferAlgorithm != DataSurfaces::HeatTransferModel::CondFD || surf.Construction <= 0 ||
+                    state.dataConstruction->Construct(surf.Construction).TypeIsWindow) {
+                    continue;
+                }
+                auto &sfd = SurfaceFD(SurfNum);
+                int const nT = s_hbfd->ConstructFD(surf.Construction).TotNodes + 1;
+                std::vector<Real64> pOld, pNew;
+                if (!planetarySteadyProfile(state, SurfNum, TempInitValue, pOld)) continue;
+                if (!planetarySteadyProfile(state, SurfNum, sfd.TDT(nT), pNew)) continue;
+                for (int i = 1; i <= nT; ++i) {
+                    Real64 const d = pNew[i - 1] - pOld[i - 1];
+                    sfd.T(i) += d;
+                    sfd.TOld(i) += d;
+                    sfd.TT(i) += d;
+                    sfd.TD(i) += d;
+                    sfd.TDT(i) += d;
+                    sfd.TDTLast(i) += d;
+                    sfd.TDOld(i) += d;
+                    sfd.TDreport(i) += d;
+                }
+            }
         }
 
         // now do every timestep inits
@@ -1703,7 +1793,7 @@ namespace HeatBalFiniteDiffManager {
             if (state.dataSurface->Surface(Surf).UseSurfPropertyGndSurfTemp) {
                 Tgndsurface = state.dataSurface->GroundSurfsProperty(Surf).SurfsTempAvg;
             } else {
-                Tgndsurface = state.dataMstBal->TempOutsideAirFD(Surf);
+                Tgndsurface = Planetary::groundLongwaveTempC(state, state.dataMstBal->TempOutsideAirFD(Surf)); // ExoBEM-Core
             }
 
             Real64 TsurrSurface = 0.0;
@@ -2698,7 +2788,8 @@ namespace HeatBalFiniteDiffManager {
 
         auto &surfFD = s_hbfd->SurfaceFD(surfNum);
         auto &surfName = state.dataSurface->Surface(surfNum).Name;
-        auto &minTempLimit = DataHeatBalSurface::MinSurfaceTempLimit;
+        // ExoBEM-Core: lunar night surfaces reach -180 C; keep only a physical floor off-Earth
+        Real64 const minTempLimit = state.dataPlanet->active ? -270.0 : DataHeatBalSurface::MinSurfaceTempLimit;
         auto &maxTempLimit = state.dataHeatBalSurf->MaxSurfaceTempLimit;
         if (nodeTemp < minTempLimit) {
             if (surfFD.indexNodeMinTempLimit == 0) {
