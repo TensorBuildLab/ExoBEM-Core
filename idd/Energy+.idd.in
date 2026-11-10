@@ -1183,11 +1183,18 @@ Site:PlanetaryBody,
        \type real
        \minimum 0.0
        \default 3.2
-  N19; \field Mars Diurnal Wind Speed Amplitude
+  N19, \field Mars Diurnal Wind Speed Amplitude
        \units m/s
        \type real
        \minimum 0.0
        \default 2.0
+  A5; \field Planetary Weather File Name
+       \type alpha
+       \retaincase
+       \note Optional planetary weather file in the PWF format (written by ExoBEM: exobem weather ...).
+       \note When given, solar, sky, ambient and regolith values are read from it instead of being generated,
+       \note and no EPW is needed: a calendar-only EPW is written to the output folder and used for the dates.
+       \note The file must cover the run period. Relative paths are searched like other input files.
 
 Site:VariableLocation,
        \memo Captures the scheduling of a moving/reorienting building, or more likely a vessel

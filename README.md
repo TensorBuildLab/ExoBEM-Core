@@ -1,3 +1,5 @@
+<p align="center"><img src="planetary/logo/exobem_core_logo.png" alt="ExoBEM-Core" width="480"></p>
+
 ExoBEM-Core: planetary building energy simulation (research fork)
 ==========
 
@@ -6,6 +8,7 @@ ExoBEM-Core: planetary building energy simulation (research fork)
 * What it adds, how to build and run it: [planetary/README.md](planetary/README.md)
 * Design and code audit: [planetary/DESIGN.md](planetary/DESIGN.md), [planetary/audit/](planetary/audit/)
 * Verification (Earth bit-for-bit, Moon/Mars vs Python ExoBEM): [planetary/VERIFICATION.md](planetary/VERIFICATION.md)
+* Tutorial: [planetary/TUTORIAL.md](planetary/TUTORIAL.md)
 * Lightweight Python companion: [TensorBuildLab/ExoBEM](https://github.com/TensorBuildLab/ExoBEM)
 
 The original EnergyPlus README follows.

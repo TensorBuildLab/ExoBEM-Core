@@ -5,8 +5,13 @@
 
 #include <algorithm>
 #include <array>
+#include <cstdio>
 #include <format>
 #include <cmath>
+#include <fstream>
+#include <limits>
+#include <map>
+#include <sstream>
 #include <string>
 
 #include <EnergyPlus/Data/EnergyPlusData.hh>
@@ -16,7 +21,10 @@
 #include <EnergyPlus/DataGlobals.hh>
 #include <EnergyPlus/DataHeatBalSurface.hh>
 #include <EnergyPlus/DataHeatBalance.hh>
+#include <EnergyPlus/DataStringGlobals.hh>
 #include <EnergyPlus/DataSurfaces.hh>
+#include <EnergyPlus/DataSystemVariables.hh>
+#include <EnergyPlus/FileSystem.hh>
 #include <EnergyPlus/InputProcessing/InputProcessor.hh>
 #include <EnergyPlus/OutputProcessor.hh>
 #include <EnergyPlus/PlanetaryBody.hh>
@@ -127,7 +135,9 @@ namespace {
 
     Real64 horizonVisibleFraction(Real64 elevDeg, Real64 horizonDeg, Real64 sunRadiusDeg)
     {
-        return clamp((elevDeg - horizonDeg + sunRadiusDeg) / (2.0 * sunRadiusDeg), 0.0, 1.0);
+        // area of a uniform disk above a straight horizon (ExoBEM solar.horizon_visible_fraction)
+        Real64 const x = clamp((elevDeg - horizonDeg) / sunRadiusDeg, -1.0, 1.0);
+        return (std::acos(-x) + x * std::sqrt(1.0 - x * x)) / Constant::Pi;
     }
 
     // ------------------------------------------------------------------------------------ regolith column
@@ -303,6 +313,33 @@ namespace {
         }
     };
 
+    // Periodic equilibrium for a forcing that repeats with its own length (ExoBEM RegolithColumn.equilibrate):
+    // run one period, rebuild the profile below zSkin from the period-mean temperature there so that it carries
+    // the geothermal flux, repeat until the deep temperature changes by less than tol.
+    void equilibrateColumn(RegolithColumn const &col, Real64 dt, std::vector<Real64> const &qAbs, std::vector<Real64> const &Ld,
+                           Real64 zSkin, std::vector<Real64> &T)
+    {
+        int const iS = col.nodeNearest(zSkin);
+        std::vector<Real64> mean, prof;
+        Real64 prev = -1.0;
+        bool first = true;
+        for (int it = 0; it < 6; ++it) {
+            col.run(dt, qAbs, Ld, T, first, 0, 0, nullptr, &mean);
+            first = false;
+            prof = mean;
+            for (int j = iS; j < col.n - 1; ++j) {
+                Real64 const k = col.kcSeg[j] * (1.0 + col.chi * std::pow(prof[j] / 350.0, 3));
+                prof[j + 1] = prof[j] + col.qGeo * col.dz[j] / k;
+            }
+            for (int j = iS; j < col.n; ++j) {
+                T[j] += prof[j] - mean[j];
+            }
+            if (prev > 0.0 && std::abs(prof[col.n - 1] - prev) < 0.02) break;
+            prev = prof[col.n - 1];
+        }
+        col.run(dt, qAbs, Ld, T, false, 0, 0, nullptr, &mean);
+    }
+
     // trailing running mean over k samples (current included), padded with the mean of the first k
     std::vector<Real64> trailingMean(std::vector<Real64> const &x, int k)
     {
@@ -348,7 +385,8 @@ Gas cabinGas(Real64 x)
     g.molarMass = x * 0.031999 + (1.0 - x) * 0.028014;
     g.muRef = 1.716e-5 * (1.0 + 0.12 * (x - 0.21));
     g.kRef = 0.0241 * (1.0 + 0.02 * (x - 0.21));
-    g.cp = 1005.0 - 120.0 * (x - 0.21);
+    Real64 const yO2 = x * 0.031999 / g.molarMass; // O2 mass fraction
+    g.cp = yO2 * 918.0 + (1.0 - yO2) * 1040.0;      // cp of O2 and N2 at 300 K, mass weighted
     return g;
 }
 
@@ -463,7 +501,8 @@ Real64 marsDustTau(Real64 Ls, Real64 stormStart, Real64 stormEnd, Real64 stormPe
 Real64 marsSurfacePressure(Real64 Ls, Real64 pMean)
 {
     Real64 const L = Ls * Deg;
-    return pMean * (1.0 + 0.074 * std::sin(L - 26.0 * Deg) + 0.055 * std::sin(2.0 * L + 110.0 * Deg));
+    // minimum near Ls 157 (southern cap growth), maximum near Ls 269, secondary maximum near Ls 64
+    return pMean * (1.0 + 0.074 * std::sin(L + 154.0 * Deg) + 0.055 * std::sin(2.0 * L + 290.0 * Deg));
 }
 
 // ---------------------------------------------------------------------------------------------- convection
@@ -540,6 +579,34 @@ Real64 interiorConvection(EnergyPlusData &state, int surfNum, Real64 TSurfC, Rea
     return std::max(h, 0.05);
 }
 
+Real64 pvCellTemperatureK(EnergyPlusData &state, int surfNum, Real64 qNet)
+{
+    // thin module, both faces emit (emissivity 0.85); front sees sky and ground by its tilt, back the complement
+    auto &p = *state.dataPlanet;
+    auto const &s = state.dataSurface->Surface(surfNum);
+    constexpr Real64 epsF = 0.85, epsB = 0.85;
+    Real64 const ct = s.CosTilt;
+    Real64 const Tsky4 = std::pow(state.dataEnvrn->SkyTempKelvin, 4);
+    Real64 const Tg4 = std::pow(p.groundSurfCurrentC + Constant::Kelvin, 4);
+    Real64 const Tf4 = 0.5 * (1.0 + ct) * Tsky4 + 0.5 * (1.0 - ct) * Tg4;
+    Real64 const Tb4 = 0.5 * (1.0 - ct) * Tsky4 + 0.5 * (1.0 + ct) * Tg4;
+    bool const mars = (p.body == Body::Mars);
+    Real64 const Ta = state.dataEnvrn->OutDryBulbTemp + Constant::Kelvin;
+    Real64 T = 300.0;
+    for (int it = 0; it < 50; ++it) {
+        Real64 h = 0.0;
+        if (mars) {
+            h = mixedConvection(p.atmosphere, T, Ta, p.ambientPressCurrent, p.gravity, ct, state.dataEnvrn->WindSpeed, 1.0, 0.5, 1.0);
+        }
+        Real64 const f = epsF * Sigma * (std::pow(T, 4) - Tf4) + epsB * Sigma * (std::pow(T, 4) - Tb4) + 2.0 * h * (T - Ta) - qNet;
+        Real64 const df = 4.0 * (epsF + epsB) * Sigma * std::pow(T, 3) + 2.0 * h;
+        Real64 const dT = f / df;
+        T = std::max(T - dT, 3.0);
+        if (std::abs(dT) < 1e-5) break;
+    }
+    return T;
+}
+
 Real64 groundLongwaveTempC(EnergyPlusData const &state, Real64 defaultC)
 {
     return state.dataPlanet->active ? state.dataPlanet->groundSurfCurrentC : defaultC;
@@ -595,6 +662,156 @@ Real64 meanOuterFaceTempC(EnergyPlusData &state, int surfNum)
 }
 
 // ---------------------------------------------------------------------------------------------- input
+// ---------------------------------------------------------------------------------------------- planetary weather file
+namespace {
+    std::vector<std::string> splitCsv(std::string const &line)
+    {
+        std::vector<std::string> out;
+        std::stringstream ss(line);
+        std::string item;
+        while (std::getline(ss, item, ',')) {
+            while (!item.empty() && (item.back() == '\r' || item.back() == ' ')) item.pop_back();
+            out.push_back(item);
+        }
+        return out;
+    }
+
+    // Write a calendar-only EPW (every weather value is replaced) so that the engine's run-period machinery works
+    void writeCalendarEpw(EnergyPlusData &state, fs::path const &path, Real64 lat, Real64 lon, int year)
+    {
+        std::ofstream o(path);
+        o << std::format("LOCATION,ExoBEM-Core planetary site,-,-,PWF calendar,000000,{:.4f},{:.4f},{:.1f},0.0\n", lat, lon,
+                         std::round(lon / 15.0));
+        o << "DESIGN CONDITIONS,0\nTYPICAL/EXTREME PERIODS,0\nGROUND TEMPERATURES,0\nHOLIDAYS/DAYLIGHT SAVINGS,No,0,0,0\n";
+        o << "COMMENTS 1,Calendar only: ExoBEM-Core reads every weather value from the planetary weather file\nCOMMENTS 2,\n";
+        o << "DATA PERIODS,1,1,Data,Sunday, 1/ 1,12/31\n";
+        static constexpr std::array<int, 12> mdays = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+        for (int m = 1; m <= 12; ++m) {
+            for (int d = 1; d <= mdays[m - 1]; ++d) {
+                for (int h = 1; h <= 24; ++h) {
+                    o << std::format("{},{},{},{},60,-,20.0,5.0,40,101325,0,0,300,0,0,0,0,0,0,0,180,0.0,0,0,9999,77777,9,999999999,0,0.0,0,88,"
+                                     "0.000,0.0,0.0\n",
+                                     year, m, d, h);
+                }
+            }
+        }
+        if (!o.good()) ShowFatalError(state, std::format("Site:PlanetaryBody: could not write the calendar EPW {}", path.string()));
+    }
+
+    void readPlanetaryWeatherFile(EnergyPlusData &state)
+    {
+        auto &p = *state.dataPlanet;
+        fs::path const full = DataSystemVariables::CheckForActualFilePath(state, fs::path(p.pwfPath), "Site:PlanetaryBody");
+        if (full.empty()) ShowFatalError(state, std::format("Site:PlanetaryBody: planetary weather file not found: {}", p.pwfPath));
+        std::ifstream in(full);
+        std::string line;
+        std::getline(in, line);
+        if (line.rfind("# PWF", 0) != 0) {
+            ShowFatalError(state, std::format("Site:PlanetaryBody: {} is not a PWF planetary weather file (first line must start with '# PWF')",
+                                              full.string()));
+        }
+        std::map<std::string, std::string> head;
+        std::vector<std::string> cols;
+        while (std::getline(in, line)) {
+            if (line.empty()) continue;
+            if (line[0] == '#') {
+                auto const c = line.find(':');
+                if (c == std::string::npos) continue;
+                std::string k = line.substr(1, c - 1), v = line.substr(c + 1);
+                auto trim = [](std::string &x) {
+                    x.erase(0, x.find_first_not_of(" \t\r"));
+                    x.erase(x.find_last_not_of(" \t\r") + 1);
+                };
+                trim(k);
+                trim(v);
+                head[k] = v;
+            } else {
+                cols = splitCsv(line);
+                break;
+            }
+        }
+        std::map<std::string, std::vector<Real64>> data;
+        for (auto const &c : cols) data[c];
+        while (std::getline(in, line)) {
+            if (line.empty() || line[0] == '#') continue;
+            auto const v = splitCsv(line);
+            if (v.size() != cols.size()) ShowFatalError(state, std::format("Site:PlanetaryBody: malformed record in {}: {}", full.string(), line));
+            for (size_t j = 0; j < cols.size(); ++j) {
+                data[cols[j]].push_back((v[j] == "nan" || v[j] == "NaN") ? std::numeric_limits<Real64>::quiet_NaN() : std::stod(v[j]));
+            }
+        }
+        std::string const body = Util::makeUPPER(head["body"]);
+        if ((p.body == Body::Moon && body != "MOON") || (p.body == Body::Mars && body != "MARS")) {
+            ShowFatalError(state, std::format("Site:PlanetaryBody: the weather file {} is for body '{}', not the Body of this object", full.string(),
+                                              head["body"]));
+        }
+        static constexpr std::array<std::string_view, 11> required = {"time_s", "dni_W_m2", "dhi_W_m2", "T_sky_K", "T_air_K", "T_ground_K",
+                                                                      "T_deep_K", "ground_albedo", "pressure_Pa", "wind_m_s", "zenith_deg"};
+        for (auto const &r : required) {
+            if (data.find(std::string(r)) == data.end() || data[std::string(r)].empty()) {
+                ShowFatalError(state, std::format("Site:PlanetaryBody: weather file {} lacks the required column {}", full.string(), r));
+            }
+        }
+        int Y = 0, M = 0, D = 0, h = 0, mi = 0, se = 0;
+        if (std::sscanf(head["start_utc"].c_str(), "%d-%d-%dT%d:%d:%d", &Y, &M, &D, &h, &mi, &se) < 3) {
+            ShowFatalError(state, std::format("Site:PlanetaryBody: bad start_utc '{}' in {}", head["start_utc"], full.string()));
+        }
+        p.pwfJd0 = julianDate(Y, M, D) + (h + mi / 60.0 + se / 3600.0) / 24.0;
+        p.pwfDt = std::stod(head["timestep_s"]);
+        p.pwfTime = data["time_s"];
+        p.pwfDni = data["dni_W_m2"];
+        p.pwfDhi = data["dhi_W_m2"];
+        p.pwfTsky = data["T_sky_K"];
+        p.pwfTair = data["T_air_K"];
+        p.pwfTground = data["T_ground_K"];
+        p.pwfTdeep = data["T_deep_K"];
+        p.pwfAlbedo = data["ground_albedo"];
+        p.pwfPress = data["pressure_Pa"];
+        p.pwfWind = data["wind_m_s"];
+        if (data.count("L_down_W_m2")) p.pwfLdown = data["L_down_W_m2"];
+        if (data.count("Ls_deg")) p.pwfLs = data["Ls_deg"];
+        if (data.count("dust_tau")) p.pwfTau = data["dust_tau"];
+        for (size_t i = 1; i < p.pwfTime.size(); ++i) {
+            if (std::abs(p.pwfTime[i] - p.pwfTime[i - 1] - p.pwfDt) > 1e-6 * p.pwfDt) {
+                ShowFatalError(state, std::format("Site:PlanetaryBody: records in {} are not equally spaced by timestep_s", full.string()));
+            }
+        }
+        // the engine takes the dates from a calendar-only EPW at the weather file's site
+        fs::path const epw = state.dataStrGlobals->outDirPath / "planetary_calendar.epw";
+        writeCalendarEpw(state, epw, std::stod(head["latitude_deg"]), std::stod(head["longitude_deg"]), p.referenceYear);
+        state.files.inputWeatherFilePath.filePath = epw;
+        ShowMessage(state,
+                    std::format("ExoBEM-Core: planetary weather file {} ({} records of {:g} s from {}); calendar EPW written to {}",
+                                full.string(),
+                                p.pwfTime.size(),
+                                p.pwfDt,
+                                head["start_utc"],
+                                epw.string()));
+    }
+
+    // linear interpolation of a PWF column at time t [s since start_utc]; solar columns are sampled at mid-interval
+    Real64 pwfAt(EnergyPlusData &state, std::vector<Real64> const &col, Real64 t, bool solar)
+    {
+        auto const &p = *state.dataPlanet;
+        Real64 const t0 = p.pwfTime.front() - (solar ? 0.5 * p.pwfDt : 0.0);
+        Real64 const x = (t - t0) / p.pwfDt;
+        Real64 const last = Real64(col.size() - 1);
+        if (x < -1.0 || x > last + 86400.0 / p.pwfDt + 1.0) {
+            ShowFatalError(state,
+                           std::format("Site:PlanetaryBody: the planetary weather file does not cover the run period (needed t = {:.0f} s after its "
+                                       "start)",
+                                       t));
+        }
+        if (x <= 0.0) return col.front();
+        if (x >= last) return col.back(); // the engine's extra trailing day may extend beyond the file
+        size_t const k = size_t(std::floor(x));
+        Real64 const f = x - Real64(k);
+        Real64 const a = col[k], b = col[k + 1];
+        if (std::isnan(a) || std::isnan(b)) return std::isnan(a) ? b : a;
+        return a + f * (b - a);
+    }
+} // namespace
+
 void GetInput(EnergyPlusData &state)
 {
     auto &p = *state.dataPlanet;
@@ -644,6 +861,8 @@ void GetInput(EnergyPlusData &state)
         p.stormPeakTau = ip->getRealFieldValue(f, props, "mars_dust_storm_peak_optical_depth");
         p.windMean = ip->getRealFieldValue(f, props, "mars_mean_wind_speed");
         p.windAmplitude = ip->getRealFieldValue(f, props, "mars_diurnal_wind_speed_amplitude");
+        auto const wf = f.find("planetary_weather_file_name");
+        if (wf != f.end() && wf.value().is_string()) p.pwfPath = wf.value().get<std::string>();
     }
     if (!p.active) return;
     p.cabin = cabinGas(p.cabinO2);
@@ -651,6 +870,7 @@ void GetInput(EnergyPlusData &state)
     // apparent solar motion in degrees per clock hour (Earth clock)
     p.hourAngleRate = (p.body == Body::Moon) ? 360.0 / (SynodicMonthDays * 24.0) : 360.0 / (MarsSolSeconds / 3600.0);
     state.dataEnvrn->HourAngleRate = p.hourAngleRate;
+    if (!p.pwfPath.empty()) readPlanetaryWeatherFile(state);
     if (p.horizonDeg < 0.0) {
         ShowSevereError(state, "Site:PlanetaryBody: a negative Horizon Elevation Angle is not supported in this version (use 0 or more).");
         ShowFatalError(state, "Program terminates due to the previous condition.");
@@ -757,6 +977,31 @@ void ValidateInput(EnergyPlusData &state)
                     ShowSevereError(state, "Site:PlanetaryBody: HeatBalanceAlgorithm must be ConductionTransferFunction or ConductionFiniteDifference.");
                     errors = true;
                 }
+            }
+        }
+    }
+    // PV cell-temperature models fitted to Earth air, and Li-ion batteries that would sit in outdoor air
+    auto const pvs = ip->epJSON.find("Generator:Photovoltaic");
+    if (pvs != ip->epJSON.end()) {
+        for (auto const &inst : pvs.value().items()) {
+            auto const &o = inst.value();
+            std::string const perf = o.count("photovoltaic_performance_object_type") ? Util::makeUPPER(o.at("photovoltaic_performance_object_type").get<std::string>()) : "";
+            std::string const mode = o.count("heat_transfer_integration_mode") ? Util::makeUPPER(o.at("heat_transfer_integration_mode").get<std::string>()) : "DECOUPLED";
+            if (mode == "DECOUPLEDULLEBERGDYNAMIC" || (perf == "PHOTOVOLTAICPERFORMANCE:SANDIA" && mode == "DECOUPLED")) {
+                ShowSevereError(state, std::format("Site:PlanetaryBody: Generator:Photovoltaic {}: this cell-temperature model is fitted to Earth air; "
+                                                   "use PhotovoltaicPerformance:Simple, the EquivalentOne-Diode model in Decoupled mode (planetary "
+                                                   "energy balance) or IntegratedSurfaceOutsideFace.", inst.key()));
+                errors = true;
+            }
+        }
+    }
+    auto const lib = ip->epJSON.find("ElectricLoadCenter:Storage:LiIonNMCBattery");
+    if (lib != ip->epJSON.end()) {
+        for (auto const &inst : lib.value().items()) {
+            if (!inst.value().count("zone_name")) {
+                ShowSevereError(state, std::format("Site:PlanetaryBody: ElectricLoadCenter:Storage:LiIonNMCBattery {} needs a Zone Name off-Earth "
+                                                   "(without a zone its thermal model uses the outdoor air temperature).", inst.key()));
+                errors = true;
             }
         }
     }
@@ -890,6 +1135,39 @@ namespace {
         p.zenithDeg = zen;
         p.azimuthDeg = azim;
 
+        if (!p.pwfPath.empty()) {
+            // values from the planetary weather file at the end of each engine time step (the sun is still the engine's)
+            Real64 deep = 0.0;
+            for (Real64 const v : p.pwfTdeep) deep += v;
+            p.deepGroundC = deep / Real64(p.pwfTdeep.size()) - Constant::Kelvin;
+            for (int d = 1; d <= nDays; ++d) {
+                for (int hr = 1; hr <= 24; ++hr) {
+                    for (int ts = 1; ts <= N; ++ts) {
+                        size_t const i = (size_t(d - 1) * 24 + (hr - 1)) * N + (ts - 1);
+                        Real64 const tClock = (hr - 1) + Real64(ts) / N;
+                        Real64 const t = (p.jd0 + (d - 1) + tClock / 24.0 - p.pwfJd0) * 86400.0;
+                        p.beamNormal[i] = std::max(0.0, pwfAt(state, p.pwfDni, t, true));
+                        p.diffuseHoriz[i] = std::max(0.0, pwfAt(state, p.pwfDhi, t, true));
+                        Real64 const Tsky = pwfAt(state, p.pwfTsky, t, false);
+                        p.skyTempC[i] = Tsky - Constant::Kelvin;
+                        p.groundSurfC[i] = pwfAt(state, p.pwfTground, t, false) - Constant::Kelvin;
+                        Real64 const Ta = pwfAt(state, p.pwfTair, t, false);
+                        p.airTempC[i] = std::isnan(Ta) ? p.groundSurfC[i] : Ta - Constant::Kelvin; // no air: ground (see DESIGN.md)
+                        p.albedo[i] = pwfAt(state, p.pwfAlbedo, t, false);
+                        p.ambientPress[i] = std::max(0.0, pwfAt(state, p.pwfPress, t, false));
+                        p.windSpeed[i] = std::max(0.0, pwfAt(state, p.pwfWind, t, false));
+                        p.downIR[i] = p.pwfLdown.empty() ? Sigma * std::pow(Tsky, 4) : pwfAt(state, p.pwfLdown, t, false);
+                        if (!p.pwfLs.empty()) p.solarLong[i] = pwfAt(state, p.pwfLs, t, true);
+                        if (!p.pwfTau.empty()) p.dustTau[i] = pwfAt(state, p.pwfTau, t, true);
+                    }
+                }
+            }
+            p.generatedEnvrn = state.dataWeather->Envrn;
+            ShowMessage(state, std::format("ExoBEM-Core: environment for {} days read from the planetary weather file, deep regolith {:.1f} C",
+                                           nDays, p.deepGroundC));
+            return;
+        }
+
         if (p.body == Body::Moon) {
             RegolithColumn col;
             col.albedo0 = p.regolithAlbedo;
@@ -915,14 +1193,24 @@ namespace {
                 Real64 const g = SolarIrradiance1AU / (sp.distanceAU * sp.distanceAU) * vis * std::max(std::cos(sp.zenith * Deg), 0.0);
                 qS[i] = (1.0 - col.albedo(sp.zenith)) * g;
             }
-            std::vector<Real64> T, meanSpin, surf;
-            col.run(dt, qS, LdS, T, true, p.spinUpCycles, nCyc, nullptr, &meanSpin);
-            col.run(dt, qAbs, Ld, T, false, 0, 0, &surf, nullptr);
-            Real64 deep = 0.0;
-            for (int j = col.n - 5; j < col.n; ++j) {
-                deep += meanSpin[j];
+            // periodic equilibrium of the column over the preceding Earth year (1 h steps)
+            std::vector<Real64> T, meanSpin, surf, meanRun;
+            {
+                constexpr Real64 dty = 3600.0;
+                int const ny = int(std::lround(365.25 * 86400.0 / dty));
+                std::vector<Real64> qY(ny), LdY(ny, 0.0);
+                for (int i = 0; i < ny; ++i) {
+                    Real64 const jd = p.jd0 - 365.25 + (i + 0.5) * dty / 86400.0;
+                    SunPosition const sp = sunPosition(p.body, jd, lat, lon);
+                    Real64 const vis = horizonVisibleFraction(90.0 - sp.zenith, p.horizonDeg, SunAngularRadius1AU);
+                    Real64 const g = SolarIrradiance1AU / (sp.distanceAU * sp.distanceAU) * vis * std::max(std::cos(sp.zenith * Deg), 0.0);
+                    qY[i] = (1.0 - col.albedo(sp.zenith)) * g;
+                }
+                equilibrateColumn(col, dty, qY, LdY, 0.15, T);
             }
-            p.deepGroundC = deep / 5.0 - Constant::Kelvin;
+            col.run(dt, qS, LdS, T, false, 1, nCyc, nullptr, &meanSpin);
+            col.run(dt, qAbs, Ld, T, false, 0, 0, &surf, &meanRun);
+            p.deepGroundC = meanRun[col.nodeNearest(p.deepDepth)] - Constant::Kelvin;
             for (size_t i = 0; i < n; ++i) {
                 p.groundSurfC[i] = surf[i] - Constant::Kelvin;
                 p.airTempC[i] = p.groundSurfC[i]; // no air: carries the ground temperature (see DESIGN.md)
@@ -947,8 +1235,11 @@ namespace {
                 bool const up = mu[i] > DataEnvironment::SunIsUpValue;
                 Real64 const vis = horizonVisibleFraction(90.0 - zen[i], p.horizonDeg, SunAngularRadius1AU / rAU[i]);
                 gTop[i] = S * m0;
-                Real64 const directH = up ? gTop[i] * dfrac * vis : 0.0;
-                Real64 const diffuseH = up ? S * m0 * sfrac : 0.0;
+                // beam from the solar disk: Beer's law with the true optical depth; the forward-scattering peak
+                // of the delta-Eddington "direct" flux is counted as diffuse
+                Real64 const beer = std::exp(-tau * am);
+                Real64 const directH = up ? gTop[i] * beer * vis : 0.0;
+                Real64 const diffuseH = up ? std::max(gTop[i] * (dfrac + sfrac) - gTop[i] * beer, 0.0) : 0.0;
                 p.beamNormal[i] = up ? directH / std::max(mu[i], 1e-6) : 0.0;
                 p.diffuseHoriz[i] = diffuseH;
                 ghi[i] = directH + diffuseH;
@@ -972,7 +1263,39 @@ namespace {
             int const m = std::min<int>(nSol, int(n));
             std::vector<Real64> qSol(qAbs.begin(), qAbs.begin() + m), LdSol(Ldown.begin(), Ldown.begin() + m);
             std::vector<Real64> Tspin, surf, meanProf, Tair(n);
-            col.run(dt, qSol, LdSol, Tspin, true, p.spinUpCycles, nSol, nullptr, nullptr);
+            {
+                // periodic equilibrium of the column over the preceding Mars year (1 h steps)
+                constexpr Real64 dty = 3600.0;
+                int const ny = int(std::lround(668.6 * MarsSolSeconds / dty));
+                std::vector<Real64> qY(ny), dY(ny), LdY(ny), eY(ny);
+                for (int i = 0; i < ny; ++i) {
+                    Real64 const jd = p.jd0 - ny * dty / 86400.0 + (i + 0.5) * dty / 86400.0;
+                    SunPosition const sp = sunPosition(p.body, jd, lat, lon);
+                    Real64 const tau = (p.dustModel == DustModel::Constant) ? p.dustTauConstant
+                                                                            : marsDustTau(sp.solarLongitude, p.stormStartLs, p.stormEndLs,
+                                                                                          p.stormPeakTau);
+                    Real64 const S = SolarIrradiance1AU / (sp.distanceAU * sp.distanceAU);
+                    Real64 const mu0 = std::cos(sp.zenith * Deg);
+                    Real64 const m0 = std::max(mu0, 0.0);
+                    Real64 const am = std::sqrt((Rh * m0) * (Rh * m0) + 2.0 * Rh + 1.0) - Rh * m0;
+                    Real64 df, sf;
+                    deltaEddingtonSurface(tau, 1.0 / am, w0, gAsym, p.regolithAlbedo, df, sf);
+                    bool const upY = mu0 > DataEnvironment::SunIsUpValue;
+                    Real64 const visY = horizonVisibleFraction(90.0 - sp.zenith, p.horizonDeg, SunAngularRadius1AU / sp.distanceAU);
+                    Real64 const gt = S * m0;
+                    Real64 const beer = std::exp(-tau * am);
+                    Real64 const ghiY = upY ? gt * beer * visY + std::max(gt * (df + sf) - gt * beer, 0.0) : 0.0;
+                    qY[i] = (1.0 - p.regolithAlbedo) * ghiY;
+                    dY[i] = gt - ghiY;
+                    eY[i] = clamp(e0 + e1 * tau, 0.05, 0.6);
+                }
+                std::vector<Real64> const LdustY = trailingMean(dY, std::max(1, int(std::lround(MarsSolSeconds / dty))));
+                for (int i = 0; i < ny; ++i) {
+                    LdY[i] = fRe * LdustY[i] + eY[i] * Sigma * std::pow(210.0, 4);
+                }
+                equilibrateColumn(col, dty, qY, LdY, 0.25, Tspin);
+            }
+            col.run(dt, qSol, LdSol, Tspin, false, std::min(p.spinUpCycles, 5), nSol, nullptr, nullptr);
             for (int iter = 0; iter < 4; ++iter) {
                 std::vector<Real64> T = Tspin;
                 col.run(dt, qAbs, Ldown, T, false, 0, 0, &surf, &meanProf);
@@ -990,7 +1313,7 @@ namespace {
                 std::vector<Real64> LdSol2(Ldown.begin(), Ldown.begin() + m);
                 col.run(dt, qSol, LdSol2, Tspin, false, p.spinUpCycles, nSol, nullptr, nullptr);
             }
-            p.deepGroundC = meanProf.back() - Constant::Kelvin;
+            p.deepGroundC = meanProf[col.nodeNearest(p.deepDepth)] - Constant::Kelvin;
             for (size_t i = 0; i < n; ++i) {
                 p.groundSurfC[i] = surf[i] - Constant::Kelvin;
                 p.airTempC[i] = Tair[i] - Constant::Kelvin;

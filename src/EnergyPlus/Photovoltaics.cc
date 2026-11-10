@@ -69,6 +69,7 @@
 #include <EnergyPlus/General.hh>
 #include <EnergyPlus/InputProcessing/InputProcessor.hh>
 #include <EnergyPlus/OutputProcessor.hh>
+#include <EnergyPlus/PlanetaryBody.hh>
 #include <EnergyPlus/PhotovoltaicThermalCollectors.hh>
 #include <EnergyPlus/Photovoltaics.hh>
 #include <EnergyPlus/ScheduleManager.hh>
@@ -1336,6 +1337,13 @@ namespace Photovoltaics {
             while (DummyErr > ERR) {
                 switch (state.dataPhotovoltaic->PVarray(PVnum).CellIntegrationMode) {
                 case CellIntegration::Decoupled: {
+                    if (state.dataPlanet->active) { // ExoBEM-Core: radiative (+ Mars convective) cell energy balance
+                        CellTemp = Planetary::pvCellTemperatureK(state,
+                                                                 state.dataPhotovoltaic->PVarray(PVnum).SurfacePtr,
+                                                                 (state.dataPhotovoltaic->PVarray(PVnum).TRNSYSPVModule.TauAlpha - ETA) *
+                                                                     state.dataPhotovoltaic->PVarray(PVnum).TRNSYSPVcalc.Insolation);
+                        break;
+                    }
                     //  cell temperature based on energy balance
                     state.dataPhotovoltaic->PVarray(PVnum).TRNSYSPVModule.HeatLossCoef =
                         state.dataPhotovoltaic->PVarray(PVnum).TRNSYSPVModule.TauAlpha *
@@ -1442,7 +1450,8 @@ namespace Photovoltaics {
             // if there is no incident radiation or if the control switch is 'Off'
             switch (state.dataPhotovoltaic->PVarray(PVnum).CellIntegrationMode) {
             case CellIntegration::Decoupled: {
-                CellTemp = Tambient;
+                CellTemp = state.dataPlanet->active ? Planetary::pvCellTemperatureK(state, state.dataPhotovoltaic->PVarray(PVnum).SurfacePtr, 0.0)
+                                                    : Tambient; // ExoBEM-Core: dark cell radiates to sky and regolith
             } break;
             case CellIntegration::DecoupledUllebergDynamic: {
                 CellTemp = Tambient +

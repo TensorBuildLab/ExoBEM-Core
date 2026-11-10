@@ -15,6 +15,7 @@
 #ifndef PlanetaryBody_hh_INCLUDED
 #define PlanetaryBody_hh_INCLUDED
 
+#include <string>
 #include <vector>
 
 #include <EnergyPlus/Data/BaseData.hh>
@@ -105,6 +106,9 @@ namespace Planetary {
     Real64 exteriorConvection(EnergyPlusData &state, int surfNum, Real64 TSurfK, Real64 TAirK);
     Real64 interiorConvection(EnergyPlusData &state, int surfNum, Real64 TSurfC, Real64 TAirC);
     Real64 groundLongwaveTempC(EnergyPlusData const &state, Real64 defaultC);
+    // Cell temperature [K] of a PV module on surface surfNum off-Earth: both faces radiate to sky and regolith,
+    // plus convection in the Martian atmosphere; qNet = absorbed solar minus electric output [W/m2].
+    Real64 pvCellTemperatureK(EnergyPlusData &state, int surfNum, Real64 qNet);
     // Mean outer-face temperature of a surface under the period-mean planetary environment (steady radiative balance);
     // used to start conduction profiles near their steady state (regolith time constants are months to years).
     Real64 meanOuterFaceTempC(EnergyPlusData &state, int surfNum);
@@ -165,6 +169,13 @@ struct PlanetaryData : BaseGlobalStruct
     Real64 sunDistanceCurrent = 1.0;
     bool outputsSetUp = false;
     bool condFDCorrected = false; // CondFD start-up profile corrected after warm-up
+
+    // Planetary weather file (PWF); empty path = generate the environment
+    std::string pwfPath;
+    Real64 pwfJd0 = 0.0; // JD (UTC) of the file's start_utc
+    Real64 pwfDt = 0.0;  // record length [s]
+    std::vector<Real64> pwfTime, pwfDni, pwfDhi, pwfTsky, pwfTair, pwfTground, pwfTdeep, pwfAlbedo, pwfPress, pwfWind, pwfLdown, pwfLs,
+        pwfTau;
 
     void init_constant_state([[maybe_unused]] EnergyPlusData &state) override
     {

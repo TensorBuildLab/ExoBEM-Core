@@ -27,6 +27,7 @@ sys.path.insert(0, str(EXOBEM))
 
 from exobem import simulate  # noqa: E402
 from exobem.cases import lunar_habitat, mars_habitat  # noqa: E402
+from exobem.weather import write_pwf  # noqa: E402
 from exobem.environment.sites import moon_site, mars_site  # noqa: E402
 from exobem.materials import Material, NoMassMaterial, hayne_specific_heat  # noqa: E402
 from exobem.model import InternalGain  # noqa: E402
@@ -200,7 +201,11 @@ def python_reference(case, model):
     model.zone.gains = [InternalGain(nm, W, rad, 0.0, [1.0] * 24) for nm, W, rad in GAINS]
     model.zone.leakage_kg_per_day = 0.0
     model.thermal_control = None
+    model.curvature = "off"       # planar layers, as in the EnergyPlus engine (like-for-like comparison)
     res = simulate(model, env)
+    # the same environment as a planetary weather file, for the ExoBEM-Core run in PWF mode
+    env.extra["start_utc"] = c["start"]
+    write_pwf(env, HERE / case / f"{case}.pwf", site_name=case, generator="exobem (planetary/cases/make_cases.py)")
     return res, env
 
 
@@ -217,6 +222,11 @@ def main():
         placeholder_epw(d / "placeholder.epw", case, c["lat"], c["lon"], c["start"].year)
         write_idf(d / f"{case}.idf", case, model, c["start"].year)
         print("wrote", d / f"{case}.idf")
+        # PWF variant: the engine reads the environment from <case>.pwf and needs no EPW
+        txt = (d / f"{case}.idf").read_text(encoding="utf-8")
+        assert txt.count(",3.0;\n") == 1
+        (d / f"{case}_pwf.idf").write_text(txt.replace(",3.0;\n", f",3.0,710,Climatology,0.5,0,0,0,3.2,2.0,{case}.pwf;\n"),
+                                          encoding="utf-8")
         if not args.no_python:
             res, env = python_reference(case, model)
             np.savez_compressed(d / "python_ref.npz", time_s=res.time_s, T_zone_C=res.T_zone_C, Q_heating_W=res.Q_heating_W,

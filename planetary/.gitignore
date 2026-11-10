@@ -1,3 +1,8 @@
 *.log
-cases/*/python_ref.npz
 __pycache__/
+cases/*/*.pwf
+cases/*/out/
+cases/*/out_*/
+cases/*/python_ref.npz
+cases/*/python_ref.npz
+cases/lunar_habitat/*.pwf

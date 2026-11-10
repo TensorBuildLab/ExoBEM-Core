@@ -40,6 +40,10 @@ file and line). This document records the design decisions taken from them.
 | Ground contact | `Ground` boundary uses the planetary deep-regolith temperature. Kiva, GroundDomain, F/C-factor blocked off-Earth. | 04 G01–G05 |
 | Unsupported objects | Central validator after input processing: fatal error for outdoor-air, infiltration/ventilation, air-/evap-cooled heat rejection, cooling towers, PVWatts, DElight, Kiva, HAMT, EcoRoof, window solvers other than BuiltIn, ... | 03, 04, 05, 06 |
 | Heat rejection | M3: new `HeatRejection:SpaceRadiator` plant component (FluidCooler pattern + flat-plate collector surface link). | 06 H30–H38 |
+| Planetary weather files (M2) | Optional `Planetary Weather File Name` (PWF, the ExoBEM format). Read in `Planetary::GetInput`; values are interpolated to the engine's time step (solar columns at mid-interval, state columns at interval end); the sun is still the engine's daily-fitted ephemeris. A calendar-only EPW is written to the output folder and used for the run-period dates, so the user needs no EPW. | 01 T21–T29 |
+| PV (M2) | One-diode (TRNSYS) model in Decoupled mode: cell temperature from a radiative (Moon) or radiative + convective (Mars) energy balance of a thin module whose faces see sky and regolith (`Planetary::pvCellTemperatureK`). Simple PV unchanged. Sandia Decoupled and Ulleberg dynamic (fitted to Earth air) refused. | 06 H36–H39 |
+| Batteries (M2) | Li-ion NMC batteries must be in a zone off-Earth (their thermal model would otherwise use the outdoor air). | 06 |
+| Physics corrections (M2b) | Kept identical to ExoBEM after its independent equation review: disk visibility by area; Mars beam by Beer's law (forward-scattered peak counted as diffuse); Mars pressure cycle minimum at Ls 157; cabin cp by mass fraction; deep regolith from a periodic equilibrium of the column over the preceding year. | – |
 
 ## Milestones
 
@@ -47,5 +51,5 @@ file and line). This document records the design decisions taken from them.
   exterior/interior convection, LW split and ground temperature, CondFD clamp, validator, outputs. Target: the
   ExoBEM lunar and Mars habitat cases run with ideal loads and agree with Python ExoBEM; Earth example files give
   identical results to unmodified v26.2.0.
-* **M2**: sol clock for Mars, cabin gas mixture, gravity everywhere, no-EPW run periods, planetary design days.
+* **M2 (done in part)**: planetary weather files with no EPW, PV in vacuum, battery placement check, physics corrections, NASA-class habitat case. Still open: sol clock for Mars, cabin gas mixture, gravity everywhere, planetary design days.
 * **M3**: space radiator plant component and heat-pump lift, PV cell temperature in vacuum, windows.
