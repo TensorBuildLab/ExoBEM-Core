@@ -1,6 +1,6 @@
-# ExoBEM-Core design (planetary mode for the EnergyPlus v26.2.0 engine)
+# Thermonaut design (planetary mode for the EnergyPlus v26.2.0 engine)
 
-ExoBEM-Core is a research fork of EnergyPlus v26.2.0 (BSD-3 + DOE naming clause; it is *not* EnergyPlus and
+Thermonaut is a research fork of EnergyPlus v26.2.0 (BSD-3 + DOE naming clause; it is *not* EnergyPlus and
 is not endorsed by DOE, NLR/NREL or the EnergyPlus developers). It adds a **planetary mode** that lets the full
 EnergyPlus zone heat balance simulate pressurized habitats on the Moon and Mars. The lightweight Python
 re-implementation [ExoBEM](https://github.com/TensorBuildLab/ExoBEM) is the reference model used for verification.
@@ -43,7 +43,21 @@ file and line). This document records the design decisions taken from them.
 | Planetary weather files (M2) | Optional `Planetary Weather File Name` (PWF, the ExoBEM format). Read in `Planetary::GetInput`; values are interpolated to the engine's time step (solar columns at mid-interval, state columns at interval end); the sun is still the engine's daily-fitted ephemeris. A calendar-only EPW is written to the output folder and used for the run-period dates, so the user needs no EPW. | 01 T21–T29 |
 | PV (M2) | One-diode (TRNSYS) model in Decoupled mode: cell temperature from a radiative (Moon) or radiative + convective (Mars) energy balance of a thin module whose faces see sky and regolith (`Planetary::pvCellTemperatureK`). Simple PV unchanged. Sandia Decoupled and Ulleberg dynamic (fitted to Earth air) refused. | 06 H36–H39 |
 | Batteries (M2) | Li-ion NMC batteries must be in a zone off-Earth (their thermal model would otherwise use the outdoor air). | 06 |
+| Mars long-wave (M2c) | Sky emissivity 0.12 + 0.10 τ and dust re-emission 0.20, recalibrated (as in ExoBEM) so that a global dust storm lowers the sol-mean air temperature by about 4 K, as observed in 2018. | – |
+| Start-up correction (M2d) | After warm-up, each CondFD node receives only the part of the inside-temperature correction that warm-up could not deliver, from an implicit solve of the construction's own node network for a unit inside step over the warm-up period. Removes the one-day transient. | – |
 | Physics corrections (M2b) | Kept identical to ExoBEM after its independent equation review: disk visibility by area; Mars beam by Beer's law (forward-scattered peak counted as diffuse); Mars pressure cycle minimum at Ls 157; cabin cp by mass fraction; deep regolith from a periodic equilibrium of the column over the preceding year. | – |
+
+## Tracking EnergyPlus releases
+
+Every change is applied by an idempotent patch script (`planetary/tools/apply_hooks_*.py`) that finds a short,
+unique anchor in a stock source file and inserts a hook, plus the new module `PlanetaryBody.cc/.hh` and the IDD
+object. To move to a new EnergyPlus release: check out the release tag, copy the planetary module and
+`planetary/` folder, run the patch scripts in order (each fails loudly if its anchor has moved instead of patching
+the wrong place), fix any moved anchors by hand, then rerun the Earth regression against an unmodified build of
+the same release, the unit-test suite and the planetary verification cases. Because the hooks sit at a few
+interfaces (weather arrays, sun direction, exterior and interior coefficients, CondFD start-up, PV cell
+temperature, input validation) rather than inside the solvers, most releases should need only anchor updates;
+releases that restructure those interfaces need the corresponding hook rewritten.
 
 ## Milestones
 
@@ -51,5 +65,5 @@ file and line). This document records the design decisions taken from them.
   exterior/interior convection, LW split and ground temperature, CondFD clamp, validator, outputs. Target: the
   ExoBEM lunar and Mars habitat cases run with ideal loads and agree with Python ExoBEM; Earth example files give
   identical results to unmodified v26.2.0.
-* **M2 (done in part)**: planetary weather files with no EPW, PV in vacuum, battery placement check, physics corrections, NASA-class habitat case. Still open: sol clock for Mars, cabin gas mixture, gravity everywhere, planetary design days.
+* **M2 (done; M2c–M2d added the Mars long-wave recalibration and the start-up fix)**: planetary weather files with no EPW, PV in vacuum, battery placement check, physics corrections, NASA-class habitat case. Still open: sol clock for Mars, cabin gas mixture, gravity everywhere, planetary design days.
 * **M3**: space radiator plant component and heat-pump lift, PV cell temperature in vacuum, windows.

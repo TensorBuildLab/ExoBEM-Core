@@ -474,7 +474,7 @@ struct EnergyPlusData : BaseGlobalStruct
     std::unique_ptr<PhotovoltaicStateData> dataPhotovoltaicState;
     std::unique_ptr<PhotovoltaicThermalCollectorsData> dataPhotovoltaicThermalCollector;
     std::unique_ptr<PhotovoltaicsData> dataPhotovoltaic;
-    std::unique_ptr<PlanetaryData> dataPlanet; // ExoBEM-Core
+    std::unique_ptr<PlanetaryData> dataPlanet; // Thermonaut
     std::unique_ptr<PipeHeatTransferData> dataPipeHT;
     std::unique_ptr<PipesData> dataPipes;
     std::unique_ptr<PlantCentralGSHPData> dataPlantCentralGSHP;

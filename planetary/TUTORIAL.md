@@ -1,14 +1,14 @@
-# ExoBEM-Core tutorial: a lunar habitat in the EnergyPlus engine
+# Thermonaut tutorial: a lunar habitat in the EnergyPlus engine
 
-This tutorial builds ExoBEM-Core and runs the NASA-class four-crew lunar habitat on a planetary weather file.
+This tutorial builds Thermonaut and runs the NASA-class four-crew lunar habitat on a planetary weather file.
 No EPW file is needed. It then compares the results with the Python tool ExoBEM. Everything below was run on
 Windows 11 with Visual Studio 2022 Build Tools. On Linux or macOS, use the standard EnergyPlus CMake build.
 
 ## 1. Build
 
 ```bat
-git clone https://github.com/TensorBuildLab/ExoBEM-Core.git
-cd ExoBEM-Core
+git clone https://github.com/TensorBuildLab/Thermonaut.git
+cd Thermonaut
 planetary\tools\build.bat configure 8
 ```
 
@@ -20,12 +20,12 @@ build\Products\energyplus_tests.exe --gtest_brief=1
 python planetary\tools\earth_regression.py
 ```
 
-The second command compares ExoBEM-Core with an unmodified EnergyPlus v26.2.0 build on 15 example files. It
+The second command compares Thermonaut with an unmodified EnergyPlus v26.2.0 build on 15 example files. It
 needs that build; see the script header.
 
 ## 2. Make a planetary weather file
 
-ExoBEM-Core reads the [Planetary Weather Format](https://github.com/TensorBuildLab/ExoBEM/blob/main/docs/weather_format.md)
+Thermonaut reads the [Planetary Weather Format](https://github.com/TensorBuildLab/ExoBEM/blob/main/docs/weather_format.md)
 (PWF). The easiest way to write one is the Python tool:
 
 ```bash
@@ -35,7 +35,7 @@ exobem weather --body moon --lat 0.674 --lon 23.473 --start 2030-01-01T00:00:00 
 ```
 
 PWF files can also be converted from other sources (Mars Climate Database, rover data). Without a PWF file,
-ExoBEM-Core generates the environment itself, with a C++ port of the same models.
+Thermonaut generates the environment itself, with a C++ port of the same models.
 
 ## 3. The input file
 
@@ -90,15 +90,15 @@ cd planetary\cases\lunar_habitat
 `out\eplusout.err` reports what the planetary mode did:
 
 ```
-ExoBEM-Core: planetary weather file lunar_habitat.pwf (14880 records of 180 s from 2030-01-01T00:00:00);
+Thermonaut: planetary weather file lunar_habitat.pwf (14880 records of 180 s from 2030-01-01T00:00:00);
              calendar EPW written to out\planetary_calendar.epw
-ExoBEM-Core planetary mode: Body=Moon, gravity=1.625 m/s2, cabin pressure=56500 Pa (zone air uses cabin pressure)
-ExoBEM-Core: environment for 31 days read from the planetary weather file, deep regolith -14.9 C
+Thermonaut planetary mode: Body=Moon, gravity=1.625 m/s2, cabin pressure=56500 Pa (zone air uses cabin pressure)
+Thermonaut: environment for 31 days read from the planetary weather file, deep regolith -14.9 C
 EnergyPlus Completed Successfully-- 0 Warning; 0 Severe Errors
 ```
 
 All the usual outputs are available: `Zone Ideal Loads Zone Sensible Cooling Rate`, `... Latent Cooling Rate`,
-`Zone Air Relative Humidity`, surface temperatures and PV output. ExoBEM-Core also adds these planetary outputs:
+`Zone Air Relative Humidity`, surface temperatures and PV output. Thermonaut also adds these planetary outputs:
 
 * `Site Planetary Ground Surface Temperature`
 * `Site Planetary Deep Ground Temperature`

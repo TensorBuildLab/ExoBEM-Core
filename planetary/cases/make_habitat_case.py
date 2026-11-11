@@ -1,11 +1,11 @@
-"""NASA-class lunar surface habitat in ExoBEM-Core and in ExoBEM, on the same planetary weather file.
+"""NASA-class lunar surface habitat in Thermonaut and in ExoBEM, on the same planetary weather file.
 
 The model is ExoBEM's example lunar_surface_habitat.json (4 crew, 174 m3 vertical cylinder on legs, beta cloth /
 MLI / aluminium / panel, 56.5 kPa / 34 % O2 cabin, 20-25 C, RH 30-60 %, life support, electrolysis, fans,
 lighting and avionics with cold plates, internal mass).  This script
 
   1. generates 30 days of the lunar-equator environment at 3-minute steps (PWF),
-  2. writes the habitat as an IDF for ExoBEM-Core from the ExoBEM model's surface vertices
+  2. writes the habitat as an IDF for Thermonaut from the ExoBEM model's surface vertices
      (CTF conduction; crew latent heat as OtherEquipment latent fraction; heat that does not reach the cabin
      air - cold plates and the chemical energy of electrolysis - as the OtherEquipment "lost" fraction;
      humidity held by the ideal loads with a humidistat),

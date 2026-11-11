@@ -1,7 +1,7 @@
-# ExoBEM-Core audit brief (shared by all audit agents)
+# Thermonaut audit brief (shared by all audit agents)
 
 ## Project
-ExoBEM-Core is a research fork of EnergyPlus v26.2.0 (BSD-3 + DOE naming clause; never call the product
+Thermonaut is a research fork of EnergyPlus v26.2.0 (BSD-3 + DOE naming clause; never call the product
 "EnergyPlus"/"E+"). The goal is a build of the full C++ engine that can simulate pressurized habitats on the
 Moon and Mars, keeping Earth behaviour bit-for-bit unchanged when no planetary input is given.
 

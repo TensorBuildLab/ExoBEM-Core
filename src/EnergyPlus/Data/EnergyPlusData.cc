@@ -51,7 +51,7 @@
 // EnergyPlus Headers
 #include <EnergyPlus/Data/CommonIncludes.hh>
 #include <EnergyPlus/Data/EnergyPlusData.hh>
-#include <EnergyPlus/PlanetaryBody.hh> // ExoBEM-Core
+#include <EnergyPlus/PlanetaryBody.hh> // Thermonaut
 
 namespace EnergyPlus {
 

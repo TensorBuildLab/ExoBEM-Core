@@ -1337,7 +1337,7 @@ namespace Photovoltaics {
             while (DummyErr > ERR) {
                 switch (state.dataPhotovoltaic->PVarray(PVnum).CellIntegrationMode) {
                 case CellIntegration::Decoupled: {
-                    if (state.dataPlanet->active) { // ExoBEM-Core: radiative (+ Mars convective) cell energy balance
+                    if (state.dataPlanet->active) { // Thermonaut: radiative (+ Mars convective) cell energy balance
                         CellTemp = Planetary::pvCellTemperatureK(state,
                                                                  state.dataPhotovoltaic->PVarray(PVnum).SurfacePtr,
                                                                  (state.dataPhotovoltaic->PVarray(PVnum).TRNSYSPVModule.TauAlpha - ETA) *
@@ -1451,7 +1451,7 @@ namespace Photovoltaics {
             switch (state.dataPhotovoltaic->PVarray(PVnum).CellIntegrationMode) {
             case CellIntegration::Decoupled: {
                 CellTemp = state.dataPlanet->active ? Planetary::pvCellTemperatureK(state, state.dataPhotovoltaic->PVarray(PVnum).SurfacePtr, 0.0)
-                                                    : Tambient; // ExoBEM-Core: dark cell radiates to sky and regolith
+                                                    : Tambient; // Thermonaut: dark cell radiates to sky and regolith
             } break;
             case CellIntegration::DecoupledUllebergDynamic: {
                 CellTemp = Tambient +

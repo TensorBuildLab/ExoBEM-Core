@@ -1,4 +1,4 @@
-"""Earth regression: ExoBEM-Core must reproduce unmodified EnergyPlus v26.2.0 exactly when no planetary body is set.
+"""Earth regression: Thermonaut must reproduce unmodified EnergyPlus v26.2.0 exactly when no planetary body is set.
 
 Runs each example file with the baseline build and the fork and compares the full ESO time series and the
 tabular (HTML) results numerically. Usage:

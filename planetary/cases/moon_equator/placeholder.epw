@@ -1,9 +1,9 @@
-LOCATION,moon_equator,-,-,ExoBEM-Core placeholder,000000,0.6740,23.4730,2.0,0.0
+LOCATION,moon_equator,-,-,Thermonaut placeholder,000000,0.6740,23.4730,2.0,0.0
 DESIGN CONDITIONS,0
 TYPICAL/EXTREME PERIODS,0
 GROUND TEMPERATURES,0
 HOLIDAYS/DAYLIGHT SAVINGS,No,0,0,0
-COMMENTS 1,Placeholder for ExoBEM-Core planetary mode: every weather value is replaced internally
+COMMENTS 1,Placeholder for Thermonaut planetary mode: every weather value is replaced internally
 COMMENTS 2,
 DATA PERIODS,1,1,Data,Sunday, 1/ 1,12/31
 2030,1,1,1,60,-,20.0,5.0,40,101325,0,0,300,0,0,0,0,0,0,0,180,0.0,0,0,9999,77777,9,999999999,0,0.0,0,88,0.000,0.0,0.0

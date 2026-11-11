@@ -1,6 +1,6 @@
-// ExoBEM-Core planetary mode. See PlanetaryBody.hh and planetary/DESIGN.md.
+// Thermonaut planetary mode. See PlanetaryBody.hh and planetary/DESIGN.md.
 //
-// ExoBEM-Core is a research fork of EnergyPlus(TM) v26.2.0. It is not EnergyPlus and is not endorsed by the
+// Thermonaut is a research fork of EnergyPlus(TM) v26.2.0. It is not EnergyPlus and is not endorsed by the
 // U.S. DOE, the National Laboratory of the Rockies (formerly NREL) or the EnergyPlus developers.
 
 #include <algorithm>
@@ -680,10 +680,10 @@ namespace {
     void writeCalendarEpw(EnergyPlusData &state, fs::path const &path, Real64 lat, Real64 lon, int year)
     {
         std::ofstream o(path);
-        o << std::format("LOCATION,ExoBEM-Core planetary site,-,-,PWF calendar,000000,{:.4f},{:.4f},{:.1f},0.0\n", lat, lon,
+        o << std::format("LOCATION,Thermonaut planetary site,-,-,PWF calendar,000000,{:.4f},{:.4f},{:.1f},0.0\n", lat, lon,
                          std::round(lon / 15.0));
         o << "DESIGN CONDITIONS,0\nTYPICAL/EXTREME PERIODS,0\nGROUND TEMPERATURES,0\nHOLIDAYS/DAYLIGHT SAVINGS,No,0,0,0\n";
-        o << "COMMENTS 1,Calendar only: ExoBEM-Core reads every weather value from the planetary weather file\nCOMMENTS 2,\n";
+        o << "COMMENTS 1,Calendar only: Thermonaut reads every weather value from the planetary weather file\nCOMMENTS 2,\n";
         o << "DATA PERIODS,1,1,Data,Sunday, 1/ 1,12/31\n";
         static constexpr std::array<int, 12> mdays = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
         for (int m = 1; m <= 12; ++m) {
@@ -781,7 +781,7 @@ namespace {
         writeCalendarEpw(state, epw, std::stod(head["latitude_deg"]), std::stod(head["longitude_deg"]), p.referenceYear);
         state.files.inputWeatherFilePath.filePath = epw;
         ShowMessage(state,
-                    std::format("ExoBEM-Core: planetary weather file {} ({} records of {:g} s from {}); calendar EPW written to {}",
+                    std::format("Thermonaut: planetary weather file {} ({} records of {:g} s from {}); calendar EPW written to {}",
                                 full.string(),
                                 p.pwfTime.size(),
                                 p.pwfDt,
@@ -876,7 +876,7 @@ void GetInput(EnergyPlusData &state)
         ShowFatalError(state, "Program terminates due to the previous condition.");
     }
     ShowMessage(state,
-                std::format("ExoBEM-Core planetary mode: Body={}, gravity={:.3f} m/s2, cabin pressure={:.0f} Pa (zone air uses cabin pressure)",
+                std::format("Thermonaut planetary mode: Body={}, gravity={:.3f} m/s2, cabin pressure={:.0f} Pa (zone air uses cabin pressure)",
                             p.body == Body::Moon ? "Moon" : "Mars",
                             p.gravity,
                             p.cabinPressure));
@@ -1163,7 +1163,7 @@ namespace {
                 }
             }
             p.generatedEnvrn = state.dataWeather->Envrn;
-            ShowMessage(state, std::format("ExoBEM-Core: environment for {} days read from the planetary weather file, deep regolith {:.1f} C",
+            ShowMessage(state, std::format("Thermonaut: environment for {} days read from the planetary weather file, deep regolith {:.1f} C",
                                            nDays, p.deepGroundC));
             return;
         }
@@ -1327,7 +1327,7 @@ namespace {
         }
         p.generatedEnvrn = state.dataWeather->Envrn;
         ShowMessage(state,
-                    std::format("ExoBEM-Core: generated {} environment for {} days ({} steps), deep regolith temperature {:.1f} C",
+                    std::format("Thermonaut: generated {} environment for {} days ({} steps), deep regolith temperature {:.1f} C",
                                 p.body == Body::Moon ? "lunar" : "Martian",
                                 nDays,
                                 n,

@@ -1,4 +1,4 @@
-"""ExoBEM-Core M2c patch set: Mars downwelling long-wave recalibrated (kept identical in both codes).
+"""Thermonaut M2c patch set: Mars downwelling long-wave recalibrated (kept identical in both codes).
 
 Run from the repository root:  python planetary/tools/apply_hooks_m2c.py   (idempotent)
 

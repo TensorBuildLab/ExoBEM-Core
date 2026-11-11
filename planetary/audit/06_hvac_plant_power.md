@@ -1,6 +1,6 @@
 # 06 - HVAC, plant, heat rejection, fluids and electric power
 
-Audit of ExoBEM-Core (fork of v26.2.0, branch `planetary`). Paths are relative to `src/EnergyPlus/` unless noted.
+Audit of Thermonaut (fork of v26.2.0, branch `planetary`). Paths are relative to `src/EnergyPlus/` unless noted.
 Read-only audit; line numbers are from the fork as checked out.
 
 ## 1. Summary

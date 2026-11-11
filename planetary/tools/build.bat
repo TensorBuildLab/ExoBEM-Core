@@ -1,5 +1,5 @@
 @echo off
-rem ExoBEM-Core build helper (Windows, MSVC 2022 Build Tools, Ninja).
+rem Thermonaut build helper (Windows, MSVC 2022 Build Tools, Ninja).
 rem Usage: planetary\tools\build.bat [configure] [jobs]
 setlocal
 set ROOT=%~dp0..\..

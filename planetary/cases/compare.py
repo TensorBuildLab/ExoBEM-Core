@@ -1,4 +1,4 @@
-"""Compare an ExoBEM-Core run (eplusout.sql) with the Python ExoBEM reference (python_ref.npz).
+"""Compare an Thermonaut run (eplusout.sql) with the Python ExoBEM reference (python_ref.npz).
 
 Usage: python planetary/cases/compare.py <case> <run_dir> [--skip-days N]
 Writes <run_dir>/comparison.json and comparison.png.
@@ -96,7 +96,7 @@ def main():
         for axi, k, lab in [(ax[0], "Qc", "Sensible cooling [W]"), (ax[1], "Tg", "Regolith surface [C]"),
                             (ax[2], "top", "Top facet outside face [C]"), (ax[3], "tin_top", "Top facet inside face [C]")]:
             axi.plot(t, py[k][:n], color="#2a6fbb", lw=1.4, label="ExoBEM (Python)")
-            axi.plot(t, ep[k][:n], color="#d9822b", lw=1.0, ls="--", label="ExoBEM-Core (C++)")
+            axi.plot(t, ep[k][:n], color="#d9822b", lw=1.0, ls="--", label="Thermonaut (C++)")
             axi.set_ylabel(lab)
             axi.grid(alpha=0.3)
         ax[0].legend(frameon=True)

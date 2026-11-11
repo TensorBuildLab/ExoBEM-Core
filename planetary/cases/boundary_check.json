@@ -1,0 +1,18 @@
+{
+ "moon_vacuum": {
+  "steps": 201600,
+  "lw_residual_rmse_W_m2": 0.640222035515743,
+  "lw_residual_p99_W_m2": 0.17880341723095888,
+  "lw_mean_abs_W_m2": 82.0955595151833,
+  "balance_residual_rmse_W_m2": 1.162637984699016e-05,
+  "max_abs_convection_W_m2": 0.0
+ },
+ "mars_convection": {
+  "steps_used": 5269,
+  "steps_total": 14880,
+  "h_engine_mean": 0.3452893445296405,
+  "h_hand_mean": 0.3515794186100531,
+  "rel_diff_mean_pct": -1.7649963662922465,
+  "rel_diff_rmse_pct": 1.8631576580450373
+ }
+}

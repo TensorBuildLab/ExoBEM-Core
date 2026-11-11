@@ -1,4 +1,4 @@
-"""ExoBEM-Core M2b patch set: physics corrections from the independent equation review of ExoBEM (kept identical
+"""Thermonaut M2b patch set: physics corrections from the independent equation review of ExoBEM (kept identical
 in both codes).
 
 Run from the repository root:  python planetary/tools/apply_hooks_m2b.py   (idempotent)

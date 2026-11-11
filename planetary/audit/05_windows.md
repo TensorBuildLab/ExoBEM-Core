@@ -1,4 +1,4 @@
-# 05 - Windows and fenestration (audit, ExoBEM-Core fork of v26.2.0)
+# 05 - Windows and fenestration (audit, Thermonaut fork of v26.2.0)
 
 Scope: `WindowManager.cc/.hh`, `WindowManagerExteriorThermal/Optical/Data.cc`, `WindowEquivalentLayer.cc/.hh`,
 `WindowComplexManager.cc` + the TARCOG files it drives (`ThermalISO15099Calc.cc`, `ThermalEN673Calc.cc`,

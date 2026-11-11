@@ -468,7 +468,7 @@ void GetShadowingInput(EnergyPlusData &state)
         //  Set to default value
         state.dataSolarShading->ShadowingCalcFrequency = 20;
     }
-    if (state.dataPlanet->active) { // ExoBEM-Core: the Earth-year shading average is meaningless off-Earth
+    if (state.dataPlanet->active) { // Thermonaut: the Earth-year shading average is meaningless off-Earth
         state.dataSolarShading->ShadowingCalcFrequency = 1;
     }
     if (state.dataSolarShading->ShadowingCalcFrequency > 31) {
@@ -2741,7 +2741,7 @@ void AnisoSkyViewFactors(EnergyPlusData &state)
     const auto i = std::clamp(EpsilonBin, 0, static_cast<int>(F11R.size() - 1));
     F1 = max(0.0, F11R[i] + F12R[i] * Delta + F13R[i] * ZenithAng);
     F2 = F21R[i] + F22R[i] * Delta + F23R[i] * ZenithAng;
-    if (state.dataPlanet->active) { // ExoBEM-Core: isotropic diffuse sky off-Earth
+    if (state.dataPlanet->active) { // Thermonaut: isotropic diffuse sky off-Earth
         F1 = 0.0;
         F2 = 0.0;
     }
@@ -9075,7 +9075,7 @@ void PerformSolarCalculations(EnergyPlusData &state)
             AvgSinSolarDeclin = SumDec / double(state.dataSolarShading->ShadowingDaysLeft);
             AvgCosSolarDeclin = std::sqrt(1.0 - pow_2(AvgSinSolarDeclin));
             AvgEqOfTime = SumET / double(state.dataSolarShading->ShadowingDaysLeft);
-            if (state.dataPlanet->active) { // ExoBEM-Core: today's planetary sun (daily update)
+            if (state.dataPlanet->active) { // Thermonaut: today's planetary sun (daily update)
                 AvgSinSolarDeclin = state.dataWeather->TodayVariables.SinSolarDeclinAngle;
                 AvgCosSolarDeclin = state.dataWeather->TodayVariables.CosSolarDeclinAngle;
                 AvgEqOfTime = state.dataWeather->TodayVariables.EquationOfTime;
@@ -9083,7 +9083,7 @@ void PerformSolarCalculations(EnergyPlusData &state)
         } else {
             SUN3(state.dataEnvrn->DayOfYear, AvgSinSolarDeclin, AvgEqOfTime);
             AvgCosSolarDeclin = std::sqrt(1.0 - pow_2(AvgSinSolarDeclin));
-            if (state.dataPlanet->active) { // ExoBEM-Core
+            if (state.dataPlanet->active) { // Thermonaut
                 AvgSinSolarDeclin = state.dataWeather->TodayVariables.SinSolarDeclinAngle;
                 AvgCosSolarDeclin = state.dataWeather->TodayVariables.CosSolarDeclinAngle;
                 AvgEqOfTime = state.dataWeather->TodayVariables.EquationOfTime;
@@ -9546,7 +9546,7 @@ void SUN4(EnergyPlusData &state,
 
     // Compute the hour angle
     HrAngle = (state.dataEnvrn->HourAngleRate * (12.0 - (CurrentTime + EqOfTime)) +
-               (state.dataEnvrn->TimeZoneMeridian - state.dataEnvrn->Longitude)); // ExoBEM-Core: 15 deg/h on Earth
+               (state.dataEnvrn->TimeZoneMeridian - state.dataEnvrn->Longitude)); // Thermonaut: 15 deg/h on Earth
     H = HrAngle * Constant::DegToRad;
 
     // Compute the cosine of the solar zenith angle.

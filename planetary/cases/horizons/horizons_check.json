@@ -1,0 +1,20 @@
+{
+ "moon_equator": {
+  "hours": 1416,
+  "rmse_all_deg": 0.10900521759677775,
+  "max_abs_deg": 0.19613446360741804,
+  "rmse_sunlit_deg": 0.11993616540547113,
+  "bias_sunlit_deg": -0.08267735431003745,
+  "sunrise_hours_engine": 710,
+  "sunrise_hours_horizons": 712
+ },
+ "mars_jezero": {
+  "hours": 744,
+  "rmse_all_deg": 0.39824953959507525,
+  "max_abs_deg": 1.2496170525955392,
+  "rmse_sunlit_deg": 0.36111387966854624,
+  "bias_sunlit_deg": -0.2572211474359787,
+  "sunrise_hours_engine": 338,
+  "sunrise_hours_horizons": 337
+ }
+}

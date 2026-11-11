@@ -1,20 +1,22 @@
-<p align="center"><img src="logo/exobem_core_logo.png" alt="ExoBEM-Core" width="560"></p>
+<p align="center"><img src="logo/thermonaut_logo.png" alt="Thermonaut" width="560"></p>
 
-# ExoBEM-Core
+# Thermonaut
 
-**ExoBEM-Core** is a research fork of the EnergyPlus™ v26.2.0 building energy simulation engine that adds a
+**Thermonaut** is a research fork of the EnergyPlus™ v26.2.0 building energy simulation engine that adds a
 **planetary mode** for sealed, pressurized habitats on the **Moon** and **Mars**. It keeps the full EnergyPlus
 zone heat balance: surface heat balances, CTF / CondFD conduction, interior radiation, shading, internal gains,
 ideal loads, PV and storage, and reporting. It replaces the Earth-only parts: solar position, weather, sky,
 atmosphere, ground, convection, PV cell temperature and outdoor air.
 
-> ExoBEM-Core is **not** EnergyPlus and is not endorsed by the U.S. Department of Energy, the National Laboratory of
+> Thermonaut is **not** EnergyPlus and is not endorsed by the U.S. Department of Energy, the National Laboratory of
 > the Rockies (formerly NREL), or the EnergyPlus developers. It is distributed under the EnergyPlus license
 > (`LICENSE.txt`, BSD-3 with the DOE naming clause), which is why it carries a different name.
 
-Its lightweight companion is the Python tool [ExoBEM](https://github.com/TensorBuildLab/ExoBEM). ExoBEM
-re-implements the same heat-balance method, writes the planetary weather files and serves as the verification
-reference here.
+Thermonaut runs on its own: it generates the lunar and Martian environment internally or reads a planetary weather
+file. The separate Python tool [ExoBEM](https://github.com/TensorBuildLab/ExoBEM) implements the same physics
+independently; here it serves as a code-to-code reference and as a convenient writer of planetary weather files.
+The engine is also checked against independent references: JPL Horizons (sun position), Diviner (lunar regolith
+temperatures), closed-form exterior balances and NIST CO2 properties ([VERIFICATION.md](VERIFICATION.md)).
 
 **Start here:** [TUTORIAL.md](TUTORIAL.md) builds the engine and runs a NASA-class four-crew lunar habitat.
 
@@ -39,7 +41,7 @@ Site:PlanetaryBody,
   habitat.pwf;    !- Planetary Weather File Name (optional)
 ```
 
-| Earth assumption in EnergyPlus | ExoBEM-Core planetary mode |
+| Earth assumption in EnergyPlus | Thermonaut planetary mode |
 |---|---|
 | Sun from an Earth Fourier fit, 15°/h | Mars24 ephemeris (Allison & McEwen 2000) or lunar subsolar point; the engine's hour-angle rate becomes the body's (0.51°/h Moon, 14.6°/h Mars on an Earth clock) |
 | EPW weather (8,760 Earth hours, Earth range checks) | A [planetary weather file](https://github.com/TensorBuildLab/ExoBEM/blob/main/docs/weather_format.md) read and interpolated to the time step, or an internal generator: vacuum + 2.725 K sky (Moon); delta-Eddington dust two-stream with Beer-law beam, seasonal τ(Ls), pressure, downwelling IR and near-surface air (Mars); regolith column in periodic equilibrium |

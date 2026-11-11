@@ -1,15 +1,15 @@
-<p align="center"><img src="planetary/logo/exobem_core_logo.png" alt="ExoBEM-Core" width="480"></p>
+<p align="center"><img src="planetary/logo/thermonaut_logo.png" alt="Thermonaut" width="480"></p>
 
-ExoBEM-Core: planetary building energy simulation (research fork)
+Thermonaut: a planetary building energy engine (research fork of EnergyPlus)
 ==========
 
-**ExoBEM-Core** is a research fork of EnergyPlus(TM) v26.2.0 that simulates pressurized habitats on the Moon and Mars. It is **not** EnergyPlus and is not endorsed by the U.S. DOE, the National Laboratory of the Rockies (formerly NREL) or the EnergyPlus developers; it is distributed under the original license in `LICENSE.txt`.
+**Thermonaut** is a research fork of EnergyPlus(TM) v26.2.0 that simulates pressurized habitats on the Moon and Mars. It is **not** EnergyPlus and is not endorsed by the U.S. DOE, the National Laboratory of the Rockies (formerly NREL) or the EnergyPlus developers; it is distributed under the original license in `LICENSE.txt`.
 
 * What it adds, how to build and run it: [planetary/README.md](planetary/README.md)
 * Design and code audit: [planetary/DESIGN.md](planetary/DESIGN.md), [planetary/audit/](planetary/audit/)
-* Verification (Earth bit-for-bit, Moon/Mars vs Python ExoBEM): [planetary/VERIFICATION.md](planetary/VERIFICATION.md)
+* Verification (Earth bit-for-bit; Moon/Mars against JPL Horizons, Diviner, closed-form balances and the independent Python code ExoBEM): [planetary/VERIFICATION.md](planetary/VERIFICATION.md)
 * Tutorial: [planetary/TUTORIAL.md](planetary/TUTORIAL.md)
-* Lightweight Python companion: [TensorBuildLab/ExoBEM](https://github.com/TensorBuildLab/ExoBEM)
+* Independent Python tool with the same planetary physics, used as a code-to-code reference: [TensorBuildLab/ExoBEM](https://github.com/TensorBuildLab/ExoBEM)
 
 The original EnergyPlus README follows.
 

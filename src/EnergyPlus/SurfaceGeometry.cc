@@ -328,7 +328,7 @@ namespace SurfaceGeometry {
             auto &thisSurface = state.dataSurface->Surface(SurfNum);
 
             state.dataSurface->SurfAirSkyRadSplit(SurfNum) = std::sqrt(0.5 * (1.0 + thisSurface.CosTilt));
-            if (state.dataPlanet->active) { // ExoBEM-Core: no atmospheric long-wave split off-Earth
+            if (state.dataPlanet->active) { // Thermonaut: no atmospheric long-wave split off-Earth
                 state.dataSurface->SurfAirSkyRadSplit(SurfNum) = 1.0;
             }
 

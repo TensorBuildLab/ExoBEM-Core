@@ -1,6 +1,6 @@
 # 02 – Solar geometry, solar radiation, sky / ground long-wave, daylighting
 
-Audit of ExoBEM-Core (fork of EnergyPlus v26.2.0, branch `planetary`). Line numbers refer to
+Audit of Thermonaut (fork of EnergyPlus v26.2.0, branch `planetary`). Line numbers refer to
 `src/EnergyPlus/*` unless another path is given. Python reference: `exobem/ephemeris/{earth,mars,moon}.py`,
 `exobem/solar.py`, `exobem/environment/{twostream,sites,regolith}.py`, `exobem/simulation.py`.
 

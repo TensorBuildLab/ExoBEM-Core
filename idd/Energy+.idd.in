@@ -1040,7 +1040,7 @@ Site:Location,
        \default No
 
 Site:PlanetaryBody,
-       \memo ExoBEM-Core planetary mode. Selects the celestial body the building (habitat) is on and the
+       \memo Thermonaut planetary mode. Selects the celestial body the building (habitat) is on and the
        \memo parameters of its environment. With Body = Earth (or without this object) the program behaves
        \memo exactly like the unmodified engine. With Moon or Mars the weather file supplies only the calendar
        \memo and the location; solar position, solar and long-wave radiation, outdoor (ambient) conditions and

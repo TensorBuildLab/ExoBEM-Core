@@ -316,7 +316,7 @@ void CheckZoneOutBulbTempAt(EnergyPlusData &state)
     Real64 minBulb = 0.0;
     for (auto &zone : state.dataHeatBal->Zone) {
         minBulb = min(minBulb, zone.OutDryBulbTemp, zone.OutWetBulbTemp);
-        if (minBulb < -100.0 && !state.dataPlanet->active) { // ExoBEM-Core
+        if (minBulb < -100.0 && !state.dataPlanet->active) { // Thermonaut
             SetOutBulbTempAt_error(state, "Zone", zone.Centroid.z, zone.Name);
         }
     }

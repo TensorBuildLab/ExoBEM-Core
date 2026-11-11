@@ -739,7 +739,7 @@ namespace SimulationManager {
 
         ErrorsFound = false;
 
-        // ExoBEM-Core: planetary body first (it changes how the rest of the input is interpreted)
+        // Thermonaut: planetary body first (it changes how the rest of the input is interpreted)
         Planetary::GetInput(state);
         Planetary::ValidateInput(state);
 

@@ -1,7 +1,7 @@
-﻿"""Generate ExoBEM-Core verification cases and the matching Python ExoBEM reference runs.
+﻿"""Generate Thermonaut verification cases and the matching Python ExoBEM reference runs.
 
 For each case this writes, under planetary/cases/<case>/:
-  * <case>.idf      - input for ExoBEM-Core (Site:PlanetaryBody, CondFD, ideal loads)
+  * <case>.idf      - input for Thermonaut (Site:PlanetaryBody, CondFD, ideal loads)
   * placeholder.epw - calendar/location only (all weather values are replaced in planetary mode)
   * python_ref.npz  - the same habitat simulated with the Python reference model ExoBEM
 
@@ -46,10 +46,10 @@ CASES = {
 def placeholder_epw(path, name, lat, lon, year):
     """A benign EPW that only carries the location and the calendar."""
     head = [
-        f"LOCATION,{name},-,-,ExoBEM-Core placeholder,000000,{lat:.4f},{lon:.4f},{round(lon / 15.0):.1f},0.0",
+        f"LOCATION,{name},-,-,Thermonaut placeholder,000000,{lat:.4f},{lon:.4f},{round(lon / 15.0):.1f},0.0",
         "DESIGN CONDITIONS,0", "TYPICAL/EXTREME PERIODS,0",
         "GROUND TEMPERATURES,0", "HOLIDAYS/DAYLIGHT SAVINGS,No,0,0,0",
-        "COMMENTS 1,Placeholder for ExoBEM-Core planetary mode: every weather value is replaced internally",
+        "COMMENTS 1,Placeholder for Thermonaut planetary mode: every weather value is replaced internally",
         "COMMENTS 2,",
         "DATA PERIODS,1,1,Data,Sunday, 1/ 1,12/31",
     ]
@@ -203,7 +203,7 @@ def python_reference(case, model):
     model.thermal_control = None
     model.curvature = "off"       # planar layers, as in the EnergyPlus engine (like-for-like comparison)
     res = simulate(model, env)
-    # the same environment as a planetary weather file, for the ExoBEM-Core run in PWF mode
+    # the same environment as a planetary weather file, for the Thermonaut run in PWF mode
     env.extra["start_utc"] = c["start"]
     write_pwf(env, HERE / case / f"{case}.pwf", site_name=case, generator="exobem (planetary/cases/make_cases.py)")
     return res, env

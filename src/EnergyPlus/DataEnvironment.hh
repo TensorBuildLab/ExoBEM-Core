@@ -126,8 +126,8 @@ struct EnvironmentData : BaseGlobalStruct
     int Month = 0;                                // Current calendar month
     int MonthTomorrow = 0;                        // Tomorrow's calendar month
     Real64 OutBaroPress = 0.0;                    // Current outdoor air barometric pressure
-    Real64 AmbientBaroPress = 0.0; // ExoBEM-Core: true outdoor pressure off-Earth (OutBaroPress then holds the cabin pressure)
-    Real64 HourAngleRate = 15.0;   // ExoBEM-Core: apparent solar motion [deg per clock hour] (15 on Earth)
+    Real64 AmbientBaroPress = 0.0; // Thermonaut: true outdoor pressure off-Earth (OutBaroPress then holds the cabin pressure)
+    Real64 HourAngleRate = 15.0;   // Thermonaut: apparent solar motion [deg per clock hour] (15 on Earth)
     Real64 OutDryBulbTemp = 0.0;                  // Current outdoor air dry bulb temperature
     bool EMSOutDryBulbOverrideOn = false;         // EMS flag for outdoor air dry bulb temperature
     Real64 EMSOutDryBulbOverrideValue = 0.0;      // EMS override value for outdoor air dry bulb temperature

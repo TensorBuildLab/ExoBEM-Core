@@ -1,4 +1,4 @@
-"""ExoBEM-Core M1 third patch set: CondFD steady start-up profile with k(T) and a post-warm-up correction.
+"""Thermonaut M1 third patch set: CondFD steady start-up profile with k(T) and a post-warm-up correction.
 
 Run from the repository root:  python planetary/tools/apply_hooks_m1c.py   (idempotent)
 """
@@ -12,9 +12,9 @@ s = s.replace("\r\n", "\n")
 
 if "planetarySteadyProfile" not in s:
     # 1. replace the inline profile block by a call to the helper
-    a = s.index("                // ExoBEM-Core: start from the steady conduction profile")
+    a = s.index("                // Thermonaut: start from the steady conduction profile")
     b = s.index("            s_hbfd->WarmupSurfTemp = 0;\n", a)
-    block = '''                // ExoBEM-Core: start from the steady conduction profile between the mean outer-face temperature and the
+    block = '''                // Thermonaut: start from the steady conduction profile between the mean outer-face temperature and the
                 // initial zone temperature; a 1 m regolith cover needs months to years to settle (corrected after warm-up)
                 if (state.dataPlanet->active && state.dataPlanet->generatedEnvrn >= 0) {
                     std::vector<Real64> prof;
@@ -35,7 +35,7 @@ if "planetarySteadyProfile" not in s:
     # 2. correction at the first time step after warm-up
     anchor = "        // now do every timestep inits\n"
     assert s.count(anchor) == 1
-    corr = '''        // ExoBEM-Core: after warm-up the inside faces sit at their real temperature; shift the deep part of each start-up
+    corr = '''        // Thermonaut: after warm-up the inside faces sit at their real temperature; shift the deep part of each start-up
         // profile accordingly (the correction is zero at the outer face, so the converged day/night structure is kept)
         if (state.dataPlanet->active && !state.dataGlobal->WarmupFlag && !state.dataPlanet->condFDCorrected) {
             state.dataPlanet->condFDCorrected = true;
@@ -70,7 +70,7 @@ if "planetarySteadyProfile" not in s:
     # 3. the helper (before InitHeatBalFiniteDiff)
     fn = "    void InitHeatBalFiniteDiff(EnergyPlusData &state)\n"
     assert s.count(fn) == 1
-    helper = '''    // ExoBEM-Core: steady conduction profile through a CondFD construction between the mean outer-face temperature
+    helper = '''    // Thermonaut: steady conduction profile through a CondFD construction between the mean outer-face temperature
     // (planetary environment) and an inside-face temperature tIn; conductivity follows each layer's k(T) table.
     static bool planetarySteadyProfile(EnergyPlusData &state, int SurfNum, Real64 tIn, std::vector<Real64> &prof)
     {

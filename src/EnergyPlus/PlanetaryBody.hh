@@ -1,6 +1,6 @@
-// ExoBEM-Core planetary mode.
+// Thermonaut planetary mode.
 //
-// ExoBEM-Core is a research fork of EnergyPlus(TM) v26.2.0. It is not EnergyPlus and is not endorsed by the
+// Thermonaut is a research fork of EnergyPlus(TM) v26.2.0. It is not EnergyPlus and is not endorsed by the
 // U.S. DOE, the National Laboratory of the Rockies (formerly NREL) or the EnergyPlus developers.
 //
 // This module holds everything that is specific to simulating a habitat on another body (Moon, Mars):

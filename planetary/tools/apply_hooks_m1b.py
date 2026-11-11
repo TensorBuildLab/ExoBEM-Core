@@ -1,4 +1,4 @@
-"""ExoBEM-Core M1 second patch set: steady start-up profile for CondFD, no outdoor moisture off-Earth.
+"""Thermonaut M1 second patch set: steady start-up profile for CondFD, no outdoor moisture off-Earth.
 
 Run from the repository root:  python planetary/tools/apply_hooks_m1b.py   (idempotent)
 """
@@ -94,7 +94,7 @@ PROFILE = '''                state.dataMstBal->HSkyFD(SurfNum) = 0.0;
                 state.dataMstBal->HGrndFD(SurfNum) = 0.0;
                 state.dataMstBal->HAirFD(SurfNum) = 0.0;
 
-                // ExoBEM-Core: start from the steady conduction profile (resistance-weighted between the mean outer-face
+                // Thermonaut: start from the steady conduction profile (resistance-weighted between the mean outer-face
                 // temperature and the initial zone temperature); a 1 m regolith cover needs months to years to settle
                 if (state.dataPlanet->active && state.dataPlanet->generatedEnvrn >= 0) {
                     Real64 const tOut = Planetary::meanOuterFaceTempC(state, SurfNum);
@@ -134,7 +134,7 @@ edit("HeatBalanceSurfaceManager.cc",
      "                                state.dataMstBal->HConvExtFD(SurfNum) = state.dataHeatBalSurf->SurfHConvExt(SurfNum);\n",
      "                                state.dataMstBal->TempOutsideAirFD(SurfNum) = TempExt;\n"
      "                                state.dataMstBal->HConvExtFD(SurfNum) = state.dataHeatBalSurf->SurfHConvExt(SurfNum);\n"
-     "                                if (state.dataPlanet->active) { // ExoBEM-Core: no outdoor moisture exchange off-Earth\n"
+     "                                if (state.dataPlanet->active) { // Thermonaut: no outdoor moisture exchange off-Earth\n"
      "                                    state.dataMstBal->RhoVaporAirOut(SurfNum) = 0.0;\n"
      "                                    state.dataMstBal->HMassConvExtFD(SurfNum) = 0.0;\n"
      "                                } else {\n"
@@ -148,6 +148,6 @@ edit("HeatBalanceSurfaceManager.cc",
      "                                if (state.dataMstBal->RhoVaporAirOut(SurfNum) > RhoVaporSat) {\n"
      "                                    state.dataMstBal->RhoVaporAirOut(SurfNum) = RhoVaporSat;\n"
      "                                }\n"
-     "                                } // ExoBEM-Core\n"
+     "                                } // Thermonaut\n"
      "                                state.dataMstBal->HSkyFD(SurfNum) = state.dataHeatBalSurf->SurfHSkyExt(SurfNum);\n")
 print("done")

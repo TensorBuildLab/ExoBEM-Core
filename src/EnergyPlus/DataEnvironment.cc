@@ -108,7 +108,7 @@ Real64 OutDryBulbTempAt(EnergyPlusData &state, Real64 const Z) // Height above g
         LocalOutDryBulbTemp = BaseTemp - state.dataEnvrn->SiteTempGradient * DataEnvironment::EarthRadius * Z / (DataEnvironment::EarthRadius + Z);
     }
 
-    if (LocalOutDryBulbTemp < -100.0 && !state.dataPlanet->active) { // ExoBEM-Core
+    if (LocalOutDryBulbTemp < -100.0 && !state.dataPlanet->active) { // Thermonaut
         ShowSevereError(state, "OutDryBulbTempAt: outdoor drybulb temperature < -100 C");
         ShowContinueError(state, std::format("...check heights, this height=[{:.0f}].", Z));
         ShowFatalError(state, "Program terminates due to preceding condition(s).");
@@ -151,7 +151,7 @@ Real64 OutWetBulbTempAt(EnergyPlusData &state, Real64 const Z) // Height above g
         LocalOutWetBulbTemp = BaseTemp - state.dataEnvrn->SiteTempGradient * DataEnvironment::EarthRadius * Z / (DataEnvironment::EarthRadius + Z);
     }
 
-    if (LocalOutWetBulbTemp < -100.0 && !state.dataPlanet->active) { // ExoBEM-Core
+    if (LocalOutWetBulbTemp < -100.0 && !state.dataPlanet->active) { // Thermonaut
         ShowSevereError(state, "OutWetBulbTempAt: outdoor wetbulb temperature < -100 C");
         ShowContinueError(state, std::format("...check heights, this height=[{:.0f}].", Z));
         ShowFatalError(state, "Program terminates due to preceding condition(s).");

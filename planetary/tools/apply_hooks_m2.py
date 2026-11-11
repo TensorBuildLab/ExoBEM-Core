@@ -1,4 +1,4 @@
-"""ExoBEM-Core M2a patch set: planetary weather files (PWF), PV cell temperature in vacuum, more input checks.
+"""Thermonaut M2a patch set: planetary weather files (PWF), PV cell temperature in vacuum, more input checks.
 
 Run from the repository root:  python planetary/tools/apply_hooks_m2.py   (idempotent)
 
@@ -109,10 +109,10 @@ namespace {
     void writeCalendarEpw(EnergyPlusData &state, fs::path const &path, Real64 lat, Real64 lon, int year)
     {
         std::ofstream o(path);
-        o << std::format("LOCATION,ExoBEM-Core planetary site,-,-,PWF calendar,000000,{:.4f},{:.4f},{:.1f},0.0\n", lat, lon,
+        o << std::format("LOCATION,Thermonaut planetary site,-,-,PWF calendar,000000,{:.4f},{:.4f},{:.1f},0.0\n", lat, lon,
                          std::round(lon / 15.0));
         o << "DESIGN CONDITIONS,0\nTYPICAL/EXTREME PERIODS,0\nGROUND TEMPERATURES,0\nHOLIDAYS/DAYLIGHT SAVINGS,No,0,0,0\n";
-        o << "COMMENTS 1,Calendar only: ExoBEM-Core reads every weather value from the planetary weather file\nCOMMENTS 2,\n";
+        o << "COMMENTS 1,Calendar only: Thermonaut reads every weather value from the planetary weather file\nCOMMENTS 2,\n";
         o << "DATA PERIODS,1,1,Data,Sunday, 1/ 1,12/31\n";
         static constexpr std::array<int, 12> mdays = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
         for (int m = 1; m <= 12; ++m) {
@@ -210,7 +210,7 @@ namespace {
         writeCalendarEpw(state, epw, std::stod(head["latitude_deg"]), std::stod(head["longitude_deg"]), p.referenceYear);
         state.files.inputWeatherFilePath.filePath = epw;
         ShowMessage(state,
-                    std::format("ExoBEM-Core: planetary weather file {} ({} records of {:g} s from {}); calendar EPW written to {}",
+                    std::format("Thermonaut: planetary weather file {} ({} records of {:g} s from {}); calendar EPW written to {}",
                                 full.string(),
                                 p.pwfTime.size(),
                                 p.pwfDt,
@@ -276,7 +276,7 @@ FILL = '''        p.zenithDeg = zen;
                 }
             }
             p.generatedEnvrn = state.dataWeather->Envrn;
-            ShowMessage(state, std::format("ExoBEM-Core: environment for {} days read from the planetary weather file, deep regolith {:.1f} C",
+            ShowMessage(state, std::format("Thermonaut: environment for {} days read from the planetary weather file, deep regolith {:.1f} C",
                                            nDays, p.deepGroundC));
             return;
         }
@@ -355,7 +355,7 @@ edit(PVC, '''                case CellIntegration::Decoupled: {
                     //  cell temperature based on energy balance
                     state.dataPhotovoltaic->PVarray(PVnum).TRNSYSPVModule.HeatLossCoef =''',
      '''                case CellIntegration::Decoupled: {
-                    if (state.dataPlanet->active) { // ExoBEM-Core: radiative (+ Mars convective) cell energy balance
+                    if (state.dataPlanet->active) { // Thermonaut: radiative (+ Mars convective) cell energy balance
                         CellTemp = Planetary::pvCellTemperatureK(state,
                                                                  state.dataPhotovoltaic->PVarray(PVnum).SurfacePtr,
                                                                  (state.dataPhotovoltaic->PVarray(PVnum).TRNSYSPVModule.TauAlpha - ETA) *
@@ -364,13 +364,13 @@ edit(PVC, '''                case CellIntegration::Decoupled: {
                     }
                     //  cell temperature based on energy balance
                     state.dataPhotovoltaic->PVarray(PVnum).TRNSYSPVModule.HeatLossCoef =''',
-     marker="ExoBEM-Core: radiative (+ Mars convective) cell energy balance")
+     marker="Thermonaut: radiative (+ Mars convective) cell energy balance")
 edit(PVC, '''            switch (state.dataPhotovoltaic->PVarray(PVnum).CellIntegrationMode) {
             case CellIntegration::Decoupled: {
                 CellTemp = Tambient;
             } break;''', '''            switch (state.dataPhotovoltaic->PVarray(PVnum).CellIntegrationMode) {
             case CellIntegration::Decoupled: {
                 CellTemp = state.dataPlanet->active ? Planetary::pvCellTemperatureK(state, state.dataPhotovoltaic->PVarray(PVnum).SurfacePtr, 0.0)
-                                                    : Tambient; // ExoBEM-Core: dark cell radiates to sky and regolith
+                                                    : Tambient; // Thermonaut: dark cell radiates to sky and regolith
             } break;''', marker="dark cell radiates to sky and regolith")
 print("done")
