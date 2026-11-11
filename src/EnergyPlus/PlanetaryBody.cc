@@ -1218,7 +1218,9 @@ namespace {
         } else {
             // Mars
             constexpr Real64 w0 = 0.885, gAsym = 0.74, Rh = 3390.0 / 11.0;
-            constexpr Real64 kappa = 0.6, lagH = 0.5, e0 = 0.08, e1 = 0.125, fRe = 0.45;
+            // sky emissivity e0 + e1*tau (cap 0.6) and dust re-emission fRe, calibrated to the MEDA/TIRS clear-season
+            // mean (~30 W/m2) and the 2018 storm (sol-mean air -4 K): ExoBEM studies/calibrate_mars_storm_ir.py
+            constexpr Real64 kappa = 0.6, lagH = 0.5, e0 = 0.12, e1 = 0.10, fRe = 0.20;
             RegolithColumn col = RegolithColumn::mars(p.regolithThermalInertia, p.regolithAlbedo, p.regolithEmissivity);
             col.build();
             std::vector<Real64> ghi(n), gTop(n), epsSky(n);

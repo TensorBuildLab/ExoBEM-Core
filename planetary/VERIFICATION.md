@@ -1,7 +1,7 @@
 # ExoBEM-Core verification (M2)
 
 All runs: Windows 11, MSVC 14.44 (VS 2022 Build Tools), Release build of v26.2.0 + ExoBEM-Core changes
-(patch sets m1, m1b, m1c, m2, m2b in `planetary/tools/`).
+(patch sets m1, m1b, m1c, m2, m2b, m2c in `planetary/tools/`).
 
 ## 1. Earth: identical to EnergyPlus v26.2.0
 
@@ -46,13 +46,13 @@ that ExoBEM wrote for its own run, with no EPW).
 
 | Quantity | Moon equator, 2nd lunation (720 h) | Mars Jezero, days 16–31 (384 h) |
 |---|---|---|
-| Sensible cooling, C++ generator / C++ PWF / Python (kWh) | 2305.8 / 2305.8 / 2306.0 (−0.01 %) | 748.7 / 747.2 / 753.7 (−0.66 % / −0.86 %) |
-| Hourly cooling RMSE, generator / PWF (W) | 0.3 / 0.3 | 13 / 17 |
+| Sensible cooling, C++ generator / C++ PWF / Python (kWh) | 2305.8 / 2305.8 / 2306.0 (−0.01 %) | 721.8 / 720.2 / 728.2 (−0.88 % / −1.10 %) |
+| Hourly cooling RMSE, generator / PWF (W) | 0.3 / 0.3 | 17 / 21 |
 | Regolith surface temperature RMSE, generator / PWF (K) | 0.05 / 0.000 | 0.21 / 0.000 |
-| Deep regolith temperature (C++ / Python) | −14.87 / −14.87 °C | −48.83 / −48.83 °C |
+| Deep regolith temperature (C++ / Python) | −14.87 / −14.87 °C | −50.85 / −50.84 °C |
 | Direct normal irradiance R² | 0.9999 | 0.9999 |
-| Top facet outside / inside face RMSE (K) | 0.33 / 0.002 | 0.61–0.63 / 0.05–0.06 |
-| Interior convection coefficient (C++ / Python, W/m²K) | 0.83 / 0.83 | 1.14 / 1.13 |
+| Top facet outside / inside face RMSE (K) | 0.33 / 0.002 | 0.65–0.67 / 0.06–0.07 |
+| Interior convection coefficient (C++ / Python, W/m²K) | 0.83 / 0.83 | 1.20 / 1.19 |
 
 With the PWF file the environment is identical in both programs (RMSE 0), so the remaining differences are in
 the heat-balance solution (CondFD versus ExoBEM's stretched finite volumes, start-up of the Martian regolith
@@ -96,6 +96,11 @@ expected severe errors from the planetary input validator.
 
 ## Notes
 
+* M2c recalibrated the Martian downwelling long-wave model in both codes (sky emissivity 0.12 + 0.10 τ, dust
+  re-emission 0.20, previously 0.08 + 0.125 τ and 0.45) so that a global dust storm lowers the sol-mean air
+  temperature by about 4 K, as Curiosity observed in 2018, instead of raising it by 18 K. The Mars column above is
+  from the M2c runs; the colder Martian environment raises the envelope heat flow and with it the slowly decaying
+  start-up residual of the regolith cover (−0.66 % → −0.88 % with the generator). Earth results remain identical.
 * CondFD cannot resolve the 4 mm aluminium shell (stock check thickness < √(3αΔt)); in the regolith-module input
   its heat capacity is lumped into the interior panel and its resistance (3·10⁻⁵ m²K/W) is dropped. The NASA-class
   habitat uses CTF and keeps the aluminium.
