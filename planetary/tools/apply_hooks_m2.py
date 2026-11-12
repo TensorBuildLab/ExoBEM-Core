@@ -2,8 +2,8 @@
 
 Run from the repository root:  python planetary/tools/apply_hooks_m2.py   (idempotent)
 
-* Site:PlanetaryBody gets an optional field "Planetary Weather File Name" (PWF, docs: ExoBEM
-  docs/weather_format.md). When given, sun, sky, ambient and regolith values are read from it instead of
+* Site:PlanetaryBody gets an optional field "Planetary Weather File Name" (PWF,
+  specification in planetary/docs/weather_format.md). When given, sun, sky, ambient and regolith values are read from it instead of
   being generated, and the user does not need an EPW: a calendar-only EPW is written to the output folder.
 * The equivalent one-diode PV model (Decoupled mode) computes the cell temperature from a radiative (Moon) or
   radiative + convective (Mars) energy balance instead of the NOCT relation for Earth air.
@@ -47,7 +47,7 @@ edit(ROOT / "idd" / "Energy+.idd.in",
   A5; \\field Planetary Weather File Name
        \\type alpha
        \\retaincase
-       \\note Optional planetary weather file in the PWF format (written by ExoBEM: exobem weather ...).
+       \\note Optional planetary weather file in the PWF format (specification: planetary/docs/weather_format.md).
        \\note When given, solar, sky, ambient and regolith values are read from it instead of being generated,
        \\note and no EPW is needed: a calendar-only EPW is written to the output folder and used for the dates.
        \\note The file must cover the run period. Relative paths are searched like other input files.

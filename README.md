@@ -7,9 +7,8 @@ Thermonaut: a planetary building energy engine (research fork of EnergyPlus)
 
 * What it adds, how to build and run it: [planetary/README.md](planetary/README.md)
 * Design and code audit: [planetary/DESIGN.md](planetary/DESIGN.md), [planetary/audit/](planetary/audit/)
-* Verification (Earth bit-for-bit; Moon/Mars against JPL Horizons, Diviner, closed-form balances and the independent Python code ExoBEM): [planetary/VERIFICATION.md](planetary/VERIFICATION.md)
+* Verification (Earth bit-for-bit; Moon/Mars against JPL Horizons, Diviner, MEDA, NIST and closed-form balances): [planetary/VERIFICATION.md](planetary/VERIFICATION.md)
 * Tutorial: [planetary/TUTORIAL.md](planetary/TUTORIAL.md)
-* Independent Python tool with the same planetary physics, used as a code-to-code reference: [TensorBuildLab/ExoBEM](https://github.com/TensorBuildLab/ExoBEM)
 
 The original EnergyPlus README follows.
 

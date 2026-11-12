@@ -1,9 +1,10 @@
-"""Robustness and sensitivity studies for the Thermonaut paper (all runs use the engine itself; no ExoBEM).
+"""Robustness and sensitivity studies for the Thermonaut paper (all runs use the engine itself).
 
   1. depth   - lunar regolith temperature at 0.5, 1, 2 and 3 m (equatorial site, periodic equilibrium)
   2. spinup  - start-up correction against a long spin-up: a multi-year run versus a short run that starts on the same
                final dates (Mars: 25 months vs 31 days; Moon: 36 months vs 2 lunations)
-  3. startup - sensitivity of the regolith-module result to warm-up length, CondFD grid and time step (Mars)
+  3. startup - sensitivity of the regolith-module result to warm-up length, CondFD grid and time step (Mars; a
+               coarser step than 3 min is not possible: EnergyPlus requires 20 steps per hour with CondFD)
   4. params  - sensitivity of cooling energy to uncertain planetary inputs (Moon habitat; Mars regolith module)
   5. kT      - convergence of the steady k(T) start-up profile with the number of fixed-point iterations
 
@@ -103,11 +104,13 @@ def study_spinup():
     res = {}
     # Mars: 25 months vs 31 days, compare days 16-31 of January 2032 (384 h)
     m = (MARS / "mars_jezero.idf").read_text()
-    jobs = {"mars_long": set_runperiod(m, 1, 1, 2030, 1, 31, 2032), "mars_short": set_runperiod(m, 1, 1, 2032, 1, 31, 2032)}
+    # the environment starts at Reference Year + RunPeriod start date, so a short run sets its own reference year
+    jobs = {"mars_long": set_runperiod(m, 1, 1, 2030, 1, 31, 2032),
+            "mars_short": set_pb(set_runperiod(m, 1, 1, 2032, 1, 31, 2032), year=2032)}
     # Moon: 36 months vs 2 lunations ending on the same day, compare the last 720 h
     mo = (MOON / "moon_equator.idf").read_text()
     jobs["moon_long"] = set_runperiod(mo, 1, 1, 2030, 12, 31, 2032)
-    jobs["moon_short"] = set_runperiod(mo, 11, 2, 2032, 12, 31, 2032)
+    jobs["moon_short"] = set_pb(set_runperiod(mo, 11, 2, 2032, 12, 31, 2032), year=2032)
     epw = {"mars": MARS / "placeholder.epw", "moon": MOON / "placeholder.epw"}
 
     def one(k):
@@ -134,7 +137,6 @@ def study_startup():
         "warmup_min20": m.replace("FullExterior,25,6;", "FullExterior,40,20;"),
         "grid_C10": m.replace("FullyImplicitFirstOrder,30,1.0,0.002;", "FullyImplicitFirstOrder,10,1.0,0.002;"),
         "grid_C90": m.replace("FullyImplicitFirstOrder,30,1.0,0.002;", "FullyImplicitFirstOrder,90,1.0,0.002;"),
-        "timestep_10": m.replace("Timestep,20;", "Timestep,10;"),
         "timestep_30": m.replace("Timestep,20;", "Timestep,30;"),
     }
     for k, v in variants.items():

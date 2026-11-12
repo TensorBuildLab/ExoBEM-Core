@@ -1,6 +1,7 @@
-"""Cabin humidity of the lunar habitat in Thermonaut (ideal loads with a humidistat) and ExoBEM (condensing heat
-exchanger): relative humidity, dew point and the margin between the coldest inside surface and the dew point,
-hourly over days 4-30.
+"""Cabin humidity of the lunar habitat with ideal loads and a humidistat: relative humidity, dew point and the margin
+between the coldest inside surface and the dew point, hourly over days 4-30. The same margin is also evaluated for a
+cabin held at its 60 % humidity limit (what a condensing heat exchanger controlled to the limit would maintain), with
+the engine's air and surface temperatures.
 
     python planetary/cases/humidity_check.py   ->  planetary/cases/humidity_check.json
 """
@@ -15,6 +16,7 @@ import numpy as np
 HERE = Path(__file__).resolve().parent
 CASE = HERE / "lunar_habitat"
 H0, H1 = 72, 720          # days 4-30, hourly
+RH_LIMIT = 0.60
 
 
 def dew_point(T, rh):
@@ -44,16 +46,10 @@ def stats(T, rh, Tsurf_min):
 def main():
     db = sqlite3.connect(CASE / "out" / "eplusout.sql")
     keys = [r[0] for r in db.execute("SELECT DISTINCT KeyValue FROM ReportDataDictionary WHERE Name = 'Surface Inside Face Temperature'")]
-    Ts = np.array([series(db, "Surface Inside Face Temperature", k) for k in keys])
-    T = series(db, "Zone Mean Air Temperature")
-    rh = series(db, "Zone Air Relative Humidity") / 100.0
-    engine = stats(T[H0:H1], rh[H0:H1], Ts.min(axis=0)[H0:H1])
-    ref = np.load(CASE / "python_ref.npz")
-    n = len(ref["time_s"]) // H1                                 # steps per hour
-    hourly = lambda x: x[: n * H1].reshape(H1, n, *x.shape[1:]).mean(axis=1)
-    Tp, rhp, Tsp = hourly(ref["T_zone_C"]), hourly(ref["rh"]), hourly(ref["T_inside_C"]).min(axis=1)
-    exobem = stats(Tp[H0:H1], rhp[H0:H1], Tsp[H0:H1])
-    out = dict(engine=engine, exobem=exobem)
+    Ts = np.array([series(db, "Surface Inside Face Temperature", k) for k in keys]).min(axis=0)[H0:H1]
+    T = series(db, "Zone Mean Air Temperature")[H0:H1]
+    rh = series(db, "Zone Air Relative Humidity")[H0:H1] / 100.0
+    out = dict(engine=stats(T, rh, Ts), at_limit=stats(T, np.full_like(T, RH_LIMIT), Ts), rh_limit_pct=100 * RH_LIMIT)
     (HERE / "humidity_check.json").write_text(json.dumps(out, indent=1))
     print(json.dumps(out, indent=1))
 

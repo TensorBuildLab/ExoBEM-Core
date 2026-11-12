@@ -13,10 +13,9 @@ atmosphere, ground, convection, PV cell temperature and outdoor air.
 > (`LICENSE.txt`, BSD-3 with the DOE naming clause), which is why it carries a different name.
 
 Thermonaut runs on its own: it generates the lunar and Martian environment internally or reads a planetary weather
-file. The separate Python tool [ExoBEM](https://github.com/TensorBuildLab/ExoBEM) implements the same physics
-independently; here it serves as a code-to-code reference and as a convenient writer of planetary weather files.
-The engine is also checked against independent references: JPL Horizons (sun position), Diviner (lunar regolith
-temperatures), closed-form exterior balances and NIST CO2 properties ([VERIFICATION.md](VERIFICATION.md)).
+file, which `planetary/tools/export_pwf.py` writes from the internal generator. The engine is checked against
+independent references: JPL Horizons (sun position), Diviner and Apollo data (lunar regolith), MEDA and the 2018 dust
+storm (Mars sky), closed-form exterior balances and NIST CO2 properties ([VERIFICATION.md](VERIFICATION.md)).
 
 **Start here:** [TUTORIAL.md](TUTORIAL.md) builds the engine and runs a NASA-informed four-crew lunar habitat.
 
@@ -44,7 +43,7 @@ Site:PlanetaryBody,
 | Earth assumption in EnergyPlus | Thermonaut planetary mode |
 |---|---|
 | Sun from an Earth Fourier fit, 15°/h | Mars24 ephemeris (Allison & McEwen 2000) or lunar subsolar point; the engine's hour-angle rate becomes the body's (0.51°/h Moon, 14.6°/h Mars on an Earth clock) |
-| EPW weather (8,760 Earth hours, Earth range checks) | A [planetary weather file](https://github.com/TensorBuildLab/ExoBEM/blob/main/docs/weather_format.md) read and interpolated to the time step, or an internal generator: vacuum + 2.725 K sky (Moon); delta-Eddington dust two-stream with Beer-law beam, seasonal τ(Ls), pressure, downwelling IR and near-surface air (Mars); regolith column in periodic equilibrium |
+| EPW weather (8,760 Earth hours, Earth range checks) | A [planetary weather file](docs/weather_format.md) read and interpolated to the time step, or an internal generator: vacuum + 2.725 K sky (Moon); delta-Eddington dust two-stream with Beer-law beam, seasonal τ(Ls), pressure, downwelling IR and near-surface air (Mars); regolith column in periodic equilibrium |
 | Zone air at the outdoor pressure | Zone and HVAC air at the cabin pressure; the true ambient pressure is reported separately |
 | TARP/DOE-2 exterior convection with a non-zero floor | Zero in vacuum; Churchill–Chu / flat-plate mixed convection in 700 Pa CO₂ at 3.72 m/s² |
 | Interior TARP at 1 atm and 1 g | Same physical correlation for the cabin gas at cabin pressure and body gravity |
@@ -72,17 +71,17 @@ planetary changes are applied to v26.2.0 by the idempotent patch scripts in `pla
 ## Verification cases
 
 ```
-set EXOBEM_PATH=<path to a TensorBuildLab/ExoBEM checkout>
-python planetary/cases/make_cases.py            # regolith-module cases + Python references + PWF files
-build\Products\energyplus.exe -d out_moon planetary/cases/moon_equator/moon_equator_pwf.idf
-python planetary/cases/compare.py moon_equator out_moon
-python planetary/cases/make_habitat_case.py     # NASA-informed lunar habitat (IDF from the ExoBEM model) + reference
+python planetary/cases/roundtrip_check.py       # generator runs, exported weather files, runs reading them
+python planetary/cases/compare_horizons.py ../exo-runs/roundtrip/moon_equator_gen/out ../exo-runs/roundtrip/mars_jezero_gen/out
+python planetary/cases/mars_sky_check.py        # Mars sky long-wave against MEDA and the 2018 storm
+python planetary/cases/robustness.py            # start-up, spin-up, numerics and input sensitivity
+python planetary/tests/run_planetary_tests.py   # 23 planetary-mode tests
 python planetary/tools/earth_regression.py      # baseline v26.2.0 vs fork on Earth example files
 ```
 
 ## Status
 
-M2e (this branch, tag `thermonaut-m2e`): Moon and Mars habitats with opaque envelopes, CTF or CondFD conduction, internal gains, ideal
-loads with humidity control, PV in vacuum, batteries; planetary weather files with no EPW and physical range checks; an input validator (with an outdoor-air backstop) that refuses every object the audit found cannot be right off-Earth, including windows; 23 planetary tests (`tests/run_planetary_tests.py`). Planned: sol clock for
+M2e (this branch, tag `thermonaut-m2e.1`): Moon and Mars habitats with opaque envelopes, CTF or CondFD conduction, internal gains, ideal
+loads with humidity control, PV in vacuum, batteries; planetary weather files with no EPW and physical range checks, and an exporter that writes them from the internal generator; an input validator (with an outdoor-air backstop) that refuses every object the audit found cannot be right off-Earth, including windows; 23 planetary tests (`tests/run_planetary_tests.py`). Planned: sol clock for
 Mars, cabin gas-mixture psychrometrics, gravity in every buoyancy model, planetary design days, a space-radiator
 plant component and windows. See [`DESIGN.md`](DESIGN.md).

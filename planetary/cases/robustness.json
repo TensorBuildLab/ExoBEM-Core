@@ -48,11 +48,6 @@
    "first_hour_W": 1792.3941474601481,
    "vs_base_pct": -0.020323375829178758
   },
-  "timestep_10": {
-   "window_kWh": 719.4085599542425,
-   "first_hour_W": 1792.2754464939985,
-   "vs_base_pct": 0.0
-  },
   "timestep_30": {
    "window_kWh": 719.4214440604106,
    "first_hour_W": 1792.2749433388992,
@@ -151,18 +146,18 @@
    "inner_face_C": 25.76435470246915
   },
   "mars_short": {
-   "cooling_kWh": 719.4085599542425,
-   "inner_face_C": 25.779064871411027
+   "cooling_kWh": 712.6240773620816,
+   "inner_face_C": 25.72136333112773
   },
   "moon_long": {
    "cooling_kWh": 2276.5011098607274,
    "inner_face_C": 31.094700746040594
   },
   "moon_short": {
-   "cooling_kWh": 2304.116034011132,
-   "inner_face_C": 31.231813902153235
+   "cooling_kWh": 2300.9393976921783,
+   "inner_face_C": 31.21615041782525
   },
-  "mars_short_vs_long_pct": 0.06829238250822822,
-  "moon_short_vs_long_pct": 1.2130424198252943
+  "mars_short_vs_long_pct": -0.8754155819057363,
+  "moon_short_vs_long_pct": 1.073502126820669
  }
 }

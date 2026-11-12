@@ -16,11 +16,14 @@ CASES = ROOT / "planetary" / "cases"
 RUNS = ROOT.parent / "exo-runs"
 OUT = RUNS / "m2e_cases"
 
+# Generator-mode cases are compared with the M2d recordings (later patch sets must not change them); the cases that
+# read a weather file use the files exported from the generator (planetary/cases/roundtrip_check.py) and are
+# compared with the recordings made with those files.
 JOBS = [  # name, input, weather (None: none), recorded output folder
     ("moon_equator_gen", CASES / "moon_equator" / "moon_equator.idf", CASES / "moon_equator" / "placeholder.epw", RUNS / "m2d" / "moon_equator_gen"),
     ("mars_jezero_gen", CASES / "mars_jezero" / "mars_jezero.idf", CASES / "mars_jezero" / "placeholder.epw", RUNS / "m2d" / "mars_jezero_gen"),
-    ("moon_equator_pwf", CASES / "moon_equator" / "moon_equator_pwf.idf", None, RUNS / "m2d" / "moon_equator_pwf"),
-    ("mars_jezero_pwf", CASES / "mars_jezero" / "mars_jezero_pwf.idf", None, RUNS / "m2d" / "mars_jezero_pwf"),
+    ("moon_equator_pwf", CASES / "moon_equator" / "moon_equator_pwf.idf", None, RUNS / "roundtrip" / "moon_equator_pwf" / "out"),
+    ("mars_jezero_pwf", CASES / "mars_jezero" / "mars_jezero_pwf.idf", None, RUNS / "roundtrip" / "mars_jezero_pwf" / "out"),
     ("lunar_habitat", CASES / "lunar_habitat" / "lunar_habitat.idf", None, CASES / "lunar_habitat" / "out"),
     ("pv_vacuum", CASES / "pv_vacuum" / "pv_vacuum.idf", None, CASES / "pv_vacuum" / "out"),
 ]

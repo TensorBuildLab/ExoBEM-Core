@@ -28,7 +28,12 @@ def base_idf():
 
 
 def pwf_lines():
-    return (HAB / "lunar_habitat.pwf").read_text().splitlines()
+    """The habitat's weather file, written from Thermonaut's own generator if it is not there yet."""
+    f = HAB / "lunar_habitat.pwf"
+    if not f.exists():
+        subprocess.run([sys.executable, str(ROOT / "planetary" / "tools" / "export_pwf.py"), str(HAB / "lunar_habitat.idf"),
+                        str(HAB / "placeholder.epw"), str(f), str(EXE)], check=True)
+    return f.read_text().splitlines()
 
 
 def header_index(lines):

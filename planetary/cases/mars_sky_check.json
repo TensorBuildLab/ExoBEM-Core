@@ -1,0 +1,14 @@
+{
+ "L_clear_mean_W_m2": 30.101888640661503,
+ "L_annual_mean_W_m2": 31.92468784794919,
+ "L_storm_max_W_m2": 135.04444382074072,
+ "dT_sol_mean_storm_K": -4.4985332466337695,
+ "peak_Ls_deg": [
+  227.0075915872703,
+  232.81010202831519
+ ],
+ "targets": {
+  "L_clear_mean_W_m2": 30.0,
+  "dT_sol_mean_storm_K": -4.0
+ }
+}

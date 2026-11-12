@@ -45,9 +45,11 @@ no PWF header (rejected with the record number); refusal of infiltration, Earth-
 a zone, a negative horizon, SimpleCombined outside convection, one time step per hour, unscheduled water mains,
 EcoRoof, windows, an air-cooled chiller, F-factor floors and the CO2 balance; and `Site:PlanetaryBody` with
 Body = Earth, whose output is identical to the same file without it. **23 / 23 pass** (`tests/test_results.json`).
+The weather file of the tests is written from the engine's own generator (`tools/export_pwf.py`).
 
 `planetary/tools/rerun_cases_check.py` reruns every verification case below with the current build and checks
-that its output is identical to the recorded one: all six cases are identical with M2e.
+that its output is identical to the recorded one: all six cases are identical with M2e (the generator-mode cases
+against the M2d recordings).
 
 ## 2b. Audit traceability (M2e)
 
@@ -61,18 +63,19 @@ coefficients, which EnergyPlus also uses on Earth.
 
 ## 2c. Start-up and sensitivity (M2e)
 
-`planetary/cases/robustness.py` (results in `cases/robustness.json`): the corrected start of the Mars module differs
-from a 25-month spin-up by +0.07 % over the final 16 days; on the Moon a two-lunation run differs from a 36-month
-spin-up by +1.2 % (lunar design studies should spin up for a year). The Mars result changes by at most 0.25 % for a
-minimum warm-up of 1 day, CondFD discretization constant 10 or 90, or a 2- or 6-minute step, and by +0.83 % for a
-20-day warm-up. One-at-a-time input sensitivity of the cooling energy: lunar habitat MLI R ±25 % gives −3.4 / +2.2 %,
-beta-cloth optics up to ±0.7 %, regolith properties and a 5° horizon below 0.35 %; Mars module dust optical depth
-0.3 / 1.5 gives +2.9 / −2.6 %, regolith thermal inertia and albedo about ±0.5 %, wind below 0.1 %.
+`planetary/cases/robustness.py` (results in `cases/robustness.json`). Against a long spin-up ending on the same
+date (each run sets its own reference year, so both see the same environment), the corrected start of the Mars
+module differs from a 25-month spin-up by −0.88 % over the final 16 days, and a two-lunation lunar run differs from
+a 36-month spin-up by +1.07 % over the final lunation: a regolith cover keeps about 1 % of start-up memory, so
+design studies should spin up for a year or more. The 31-day Mars result changes by −0.25 % for a minimum warm-up of
+1 day, by +0.01 % / −0.02 % for CondFD discretization constants 10 / 90 and by +0.002 % for a 2-minute step, and by
++0.83 % for a 20-day warm-up. (A step longer than 3 minutes is not possible: EnergyPlus runs CondFD with at least
+20 steps per hour.) One-at-a-time input sensitivity of the cooling energy: lunar habitat MLI R ±25 % gives
+−3.4 / +2.2 %, beta-cloth optics up to ±0.7 %, regolith properties and a 5° horizon below 0.35 %; Mars module dust
+optical depth 0.3 / 1.5 gives +2.9 / −2.6 %, regolith thermal inertia and albedo about ±0.5 %, wind below 0.1 %.
 `cases/mars_convection_scope.py`: Ra 8e2–8e4, Re 2.0e4–2.8e4, Pr 0.77, Knudsen number below 2e-5 (continuum).
 
 ## 3. Moon and Mars: independent references and closed-form checks
-
-These checks do not involve ExoBEM.
 
 ### 3.1 Sun position against JPL Horizons
 
@@ -100,67 +103,67 @@ their defining equations:
 
 * **Moon, vacuum** (NASA-informed habitat, every outer face, 201,600 face-steps): convective heat gain exactly zero;
   outer-face balance (solar + long-wave + convection + conduction) closes to rounding; net long-wave equal to
-  εσ[F_sky(T_sky⁴ − T⁴) + F_g(T_g⁴ − T⁴)] within 0.64 W/m² RMSE (mean magnitude 82 W/m²; 99 % of steps within
+  εσ[F_sky(T_sky⁴ − T⁴) + F_g(T_g⁴ − T⁴)] within 0.65 W/m² RMSE (mean magnitude 82 W/m²; 99 % of steps within
   0.18 W/m²). The larger residuals (13–22 of 14,400 steps per wall) occur only in the step in which sunlight
   reaches or leaves a wall and its temperature jumps by 30–37 K: EnergyPlus linearizes the long-wave term about the
   previous step's temperature.
 * **Mars, convection** (top facet of the regolith-shielded module): the engine's exterior coefficient is within
   −1.8 % (RMSE 1.9 %) of an independent calculation with the same correlations but CO2 properties from the NIST
-  Chemistry WebBook at 700 Pa (5,269 steps with film temperature ≥ 216.6 K, the range of the NIST data).
+  Chemistry WebBook at 700 Pa (5,265 steps with film temperature ≥ 216.6 K, the range of the NIST data).
 
-## 4. Moon and Mars: code-to-code check against ExoBEM
+### 3.4 Martian sky long-wave against MEDA and the 2018 dust storm
 
-ExoBEM is an independent Python implementation of the same physics. Agreement shows that the two codes solve the
-same equations; it does not validate the equations, which is the role of section 3.
+`planetary/cases/mars_sky_check.py` runs the Jezero case over 2029–2030 (more than one Martian year) with the
+nominal dust climatology and with a global storm (optical depth 6 between Ls 190 and 270). Clear-season (Ls 30–150)
+mean downwelling long-wave: **30.1 W/m²** (MEDA/TIRS ≈ 30 W/m², Martínez et al. 2023). Sol-mean air temperature over
+the ten sols nearest Ls 230, storm minus nominal: **−4.5 K** (Curiosity in 2018: about −4 K; Viúdez-Moreiras et
+al. 2019, Guzewich et al. 2019). These are the targets to which the three long-wave parameters were fitted (M2c),
+so the check confirms that the engine reproduces the fit over a full year rather than validating it.
+
+## 4. Verification cases and the weather-file round trip
+
+`planetary/cases/roundtrip_check.py` runs each case with the engine's own environment generator, writes the
+generated environment to a planetary weather file (`tools/export_pwf.py`) and runs the case again reading that
+file. Both runs see the same environment, so their difference measures the reader (interpolation to the time
+step, interval-mean solar values) and nothing else. The exported files are the weather files of the cases.
 
 ### 4.1 Regolith-shielded module (cases `moon_equator`, `mars_jezero`)
 
 Horizontal cylinder r = 3 m, L = 10 m, 16 facets, 1 m regolith over MLI (Moon) or aerogel (Mars), 70.3 kPa /
 26.5 % O₂ cabin, constant internal gains 3240 W, ideal loads 18/27 °C, 3-min steps, CondFD with the regolith
-k(T) and cp(T) tables. ExoBEM is run with planar layers (as in the engine). Thermonaut is run in two modes:
-**generator** (its own C++ port of the environment models) and **PWF** (reading the planetary weather file
-that ExoBEM wrote for its own run, with no EPW).
+k(T) and cp(T) tables.
 
 | Quantity | Moon equator, 2nd lunation (720 h) | Mars Jezero, days 16–31 (384 h) |
 |---|---|---|
-| Sensible cooling, C++ generator / C++ PWF / Python (kWh) | 2302.4 / 2302.4 / 2306.0 (−0.16 % / −0.15 %) | 719.4 / 717.8 / 728.2 (−1.21 % / −1.43 %) |
-| Hourly cooling RMSE, generator / PWF (W) | 5.0 / 5.0 | 23 / 28 |
-| Regolith surface temperature RMSE, generator / PWF (K) | 0.05 / 0.000 | 0.21 / 0.000 |
-| Deep regolith temperature (C++ / Python) | −14.87 / −14.87 °C | −50.85 / −50.84 °C |
-| Direct normal irradiance R² | 0.9999 | 0.9999 |
-| Top facet outside / inside face RMSE (K) | 0.33 / 0.018 | 0.65–0.67 / 0.08–0.10 |
-| Interior convection coefficient (C++ / Python, W/m²K) | 0.83 / 0.83 | 1.20 / 1.19 |
+| Sensible cooling, generator / weather file (kWh) | 2302.43 / 2302.43 (+0.0000 %) | 719.41 / 717.77 (−0.23 %) |
+| Hourly cooling RMSE (W) | 0.0004 | 4.3 |
+| Regolith surface temperature RMSE (K) | 0.0001 | 0.0001 |
+| Top facet outer / inner face RMSE (K) | 0.00001 / 0.000001 | 0.011 / 0.015 |
 
-With the PWF file the environment is identical in both programs (RMSE 0), so the remaining differences are in
-the heat-balance solution: CondFD versus ExoBEM's stretched finite volumes, and above all the different starting
-states of the regolith cover (ExoBEM: pseudo-transient steady state; Thermonaut: steady k(T) profile with the M2d
-post-warm-up correction). Before M2d the full correction was also added to the inner layers, which warm-up had
-already brought to the real inside temperature; the cabin then started 2–7 K warm and the cooling load 0.4–2.4 kW
-high for about a day. M2d removes that transient (first-hour cooling within 68 W and inner face within 0.4 K of
-ExoBEM); the price is that the window agreement, which the old overshoot had partly offset, is now −0.16 % (Moon)
-and −1.2 % to −1.4 % (Mars).
+On Mars the file stores solar quantities as interval means, which smooths the rapid sunrise and sunset by half
+a step; on the Moon the sun moves 0.5° per hour and the two runs agree to rounding.
 
 ### 4.2 NASA-informed lunar surface habitat (case `lunar_habitat`)
 
-ExoBEM's example `lunar_surface_habitat.json`: 4 crew, 174 m³ vertical cylinder on legs, beta cloth / MLI
-(R 19.2 m²K/W) / aluminium / panel, 56.5 kPa / 34 % O₂ cabin at 20–25 °C and RH 30–60 %, 14 kW of electric
-power inside the shell (life support, electrolysis, fans, lighting, avionics with cold plates), crew sensible and
-latent heat on BVAD schedules, internal mass. `planetary/cases/make_habitat_case.py` writes the IDF from
-ExoBEM's model (CTF; latent heat as OtherEquipment latent fraction; cold-plate and electrolysis chemical
-energy as the "lost" fraction; humidistat ideal loads). The lunar-equator environment is read from a PWF file.
-Comparison over days 4–30 (648 h):
+4 crew, 174 m³ vertical cylinder on legs, beta cloth / MLI (R 19.2 m²K/W) / aluminium / panel, 56.5 kPa / 34 % O₂
+cabin at 20–25 °C and RH 30–60 %, 14 kW of electric power inside the shell (life support, electrolysis, fans,
+lighting, avionics with cold plates), crew sensible and latent heat on BVAD schedules, internal mass (CTF; latent
+heat as OtherEquipment latent fraction; cold-plate and electrolysis chemical energy as the "lost" fraction;
+humidistat ideal loads). Lunar equator, 30 days from 1 January 2030; results over days 4–30 (648 h):
 
-| Quantity | Thermonaut | ExoBEM | Difference |
-|---|---|---|---|
-| Sensible cooling (kWh) | 3723.0 | 3723.6 | −0.02 % (hourly RMSE 10 W, R² 0.9999) |
-| Latent cooling (kWh) | 138.2 | 139.4 | −0.9 % |
-| Outside face RMSE, south wall / roof / floor (K) | | | 0.32 / 0.09 / 0.03 |
-| Inside face RMSE (K) | | | 0.10–0.12 |
-| Mean relative humidity | 48 % | 60 % | ideal-loads supply-air convention (see note) |
+| Quantity | Value |
+|---|---|
+| Sensible / latent cooling (kWh) | 3723.0 / 138.2 |
+| Mean / peak sensible load (kW) | 5.75 / 7.46 |
+| Outer face, south wall / floor (°C) | −151 to 60 / −147 to 120 |
+| Weather-file run: sensible / latent cooling difference | −0.0002 % / −0.000002 % |
+| Cabin relative humidity | 47–50 % |
+| Coldest inside surface minus dew point, minimum (K) | 12.1 (8.5 if the cabin were held at its 60 % limit) |
 
-Note: EnergyPlus's ideal loads air system dries the supply air while it cools, so the cabin settles below the
-60 % humidistat limit; ExoBEM's condensing heat exchanger holds exactly 60 %. The latent energy, which over time
-equals the crew's moisture production, agrees within 1 %.
+EnergyPlus's ideal loads air system dries the supply air while it cools, so the cabin settles below the 60 %
+humidistat limit; a condensing heat exchanger controlled to the limit would hold 60 %, and the dew-point margin of
+the coldest inside surface would be 3.6 K smaller (`cases/humidity_check.py`). The latent energy, which over time
+equals the crew's moisture production, is not affected.
 
 ## 5. PV in vacuum (case `pv_vacuum`)
 
@@ -171,7 +174,7 @@ detached shading surfaces. The cell temperature must satisfy the vacuum energy b
 | Module | Residual, 99th percentile | Steps with residual > 1 W/m² | Sunlit cell temperature | Night minimum |
 |---|---|---|---|---|
 | Horizontal | 0.014 W/m² | 65 of 9600 (58 below the engine's 30 W/m² insolation threshold) | up to 336 K | 79 K |
-| East-facing | 0.070 W/m² | 22 of 9600 (efficiency iteration exits after the first pass) | up to 359 K | 79 K |
+| East-facing | 0.070 W/m² | 21 of 9600 (efficiency iteration exits after the first pass) | up to 359 K | 79 K |
 
 `pv_refused.idf` (Ulleberg dynamic cell model and a Li-ion battery without a zone) stops with the two
 expected severe errors from the planetary input validator. The efficiency η in the balance is iterated within each
@@ -180,15 +183,13 @@ from the previous step. Module emissivity is a constant 0.85 on both faces.
 
 ## Notes
 
-* M2c recalibrated the Martian downwelling long-wave model in both codes (sky emissivity 0.12 + 0.10 τ, dust
-  re-emission 0.20, previously 0.08 + 0.125 τ and 0.45) so that a global dust storm lowers the sol-mean air
-  temperature by about 4 K, as Curiosity observed in 2018, instead of raising it by 18 K. The Mars column above is
-  from the M2c runs; the colder Martian environment raises the envelope heat flow and with it the slowly decaying
-  start-up residual of the regolith cover (−0.66 % → −0.88 % with the generator). Earth results remain identical.
+* M2c recalibrated the Martian downwelling long-wave model (sky emissivity 0.12 + 0.10 τ, dust re-emission 0.20,
+  previously 0.08 + 0.125 τ and 0.45) so that a global dust storm lowers the sol-mean air temperature by about 4 K,
+  as Curiosity observed in 2018, instead of raising it by 18 K (section 3.4). Earth results remain identical.
 * CondFD cannot resolve the 4 mm aluminium shell (stock check thickness < √(3αΔt)); in the regolith-module input
   its heat capacity is lumped into the interior panel and its resistance (3·10⁻⁵ m²K/W) is dropped. The NASA-informed
   habitat uses CTF and keeps the aluminium.
 * Regolith covers have thermal time constants of months (Mars, 1 m) to years (Moon). Thermonaut starts CondFD
-  walls from their steady k(T) profile and corrects it with the real inside-face temperature after warm-up; the
-  deep regolith temperature comes from a periodic equilibrium of the regolith column over the preceding year.
-* The engine evaluates the sun at the end of each time step (EnergyPlus convention); ExoBEM at the middle.
+  walls from their steady k(T) profile and corrects only the part that warm-up could not reach (M2d); the deep
+  regolith temperature comes from a periodic equilibrium of the regolith column over the preceding year.
+* The engine evaluates the sun at the end of each time step (EnergyPlus convention).

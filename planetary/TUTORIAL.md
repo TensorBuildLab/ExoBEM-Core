@@ -1,7 +1,7 @@
 # Thermonaut tutorial: a lunar habitat in the EnergyPlus engine
 
-This tutorial builds Thermonaut and runs the NASA-informed four-crew lunar habitat on a planetary weather file.
-No EPW file is needed. It then compares the results with the Python tool ExoBEM. Everything below was run on
+This tutorial builds Thermonaut, writes a planetary weather file with the engine's own environment generator and
+runs the NASA-informed four-crew lunar habitat on it. No EPW file is needed for the run. Everything below was run on
 Windows 11 with Visual Studio 2022 Build Tools. On Linux or macOS, use the standard EnergyPlus CMake build.
 
 ## 1. Build
@@ -25,22 +25,23 @@ needs that build; see the script header.
 
 ## 2. Make a planetary weather file
 
-Thermonaut reads the [Planetary Weather Format](https://github.com/TensorBuildLab/ExoBEM/blob/main/docs/weather_format.md)
-(PWF). The easiest way to write one is the Python tool:
+Thermonaut generates the lunar or Martian environment itself when `Site:PlanetaryBody` names no weather file; it
+then takes the site (latitude, longitude) and the calendar from a placeholder EPW. The same environment can be
+written to a file in the [Planetary Weather Format](docs/weather_format.md) (PWF), where it can be inspected,
+edited or replaced by data from another source (Mars Climate Database, rover data):
 
-```bash
-python -m pip install "exobem[plot] @ git+https://github.com/TensorBuildLab/ExoBEM"
-exobem weather --body moon --lat 0.674 --lon 23.473 --start 2030-01-01T00:00:00 --days 31 --timestep 180 \
-               --site-name "Mare Tranquillitatis" -o lunar_habitat.pwf
+```bat
+python planetary\tools\export_pwf.py planetary\cases\lunar_habitat\lunar_habitat.idf ^
+       planetary\cases\lunar_habitat\placeholder.epw planetary\cases\lunar_habitat\lunar_habitat.pwf
 ```
 
-PWF files can also be converted from other sources (Mars Climate Database, rover data). Without a PWF file,
-Thermonaut generates the environment itself, with a C++ port of the same models.
+The script runs the input once in generator mode with every site variable reported at the time step and writes
+one record per step (solar quantities as interval means, state quantities at the end of the interval).
 
 ## 3. The input file
 
-`planetary/cases/make_habitat_case.py` writes `planetary/cases/lunar_habitat/lunar_habitat.idf` from ExoBEM's
-example model. Its geometry comes from the model's surface vertices. The planetary parts of the IDF are:
+`planetary/cases/lunar_habitat/lunar_habitat.idf` describes the habitat; the source of every input value is
+listed in supplementary material S7 of the paper. The planetary parts of the IDF are:
 
 ```
 Site:PlanetaryBody,
@@ -90,7 +91,7 @@ cd planetary\cases\lunar_habitat
 `out\eplusout.err` reports what the planetary mode did:
 
 ```
-Thermonaut: planetary weather file lunar_habitat.pwf (14880 records of 180 s from 2030-01-01T00:00:00);
+Thermonaut: planetary weather file lunar_habitat.pwf (14400 records of 180 s from 2030-01-01T00:00:00);
              calendar EPW written to out\planetary_calendar.epw
 Thermonaut planetary mode: Body=Moon, gravity=1.625 m/s2, cabin pressure=56500 Pa (zone air uses cabin pressure)
 Thermonaut: environment for 31 days read from the planetary weather file, deep regolith -14.9 C
@@ -108,20 +109,16 @@ All the usual outputs are available: `Zone Ideal Loads Zone Sensible Cooling Rat
 * `Site Planetary Solar Longitude`
 * `Site Planetary Dust Optical Depth`
 
-## 5. Compare with ExoBEM
+## 5. Check the result
 
-`make_habitat_case.py` also runs the same habitat in ExoBEM on the same weather file. The comparison is
-recorded in [VERIFICATION.md](VERIFICATION.md) (section 3.2):
-
-| | Difference |
-|---|---|
-| Sensible cooling | −0.02 % |
-| Latent cooling | −0.9 % |
-| Surface temperatures | 0.03–0.3 K RMSE |
+`planetary/cases/roundtrip_check.py` runs the habitat with the generator and again with the exported file: over
+days 4–30 the sensible cooling is 3723.0 kWh in both (difference −0.0002 %), the latent cooling 138.2 kWh. The
+ideal-loads humidistat keeps the cabin at 47–50 % relative humidity; `planetary/cases/humidity_check.py` reports the
+dew point and the margin of the coldest inside surface. [VERIFICATION.md](VERIFICATION.md) (section 4) gives the
+full results.
 
 ## 6. Next steps
 
-* **Mars:** set `Body` to `Mars` and generate a Jezero PWF with `exobem weather --body mars ...`. In this version
-  hours are Earth hours; a sol clock is planned.
+* **Mars:** set `Body` to `Mars` and use `planetary/cases/mars_jezero/placeholder.epw` for the Jezero site, or
+  export a Jezero PWF as in step 2. In this version hours are Earth hours; a sol clock is planned.
 * **PV in vacuum:** see `planetary/cases/pv_vacuum/pv_vacuum.idf`.
-* **Design guidance:** for radiators, storage and condensation on Mars, see the ExoBEM paper and tutorial.

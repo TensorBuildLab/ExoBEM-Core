@@ -84,7 +84,7 @@ namespace {
         lam = mod360(L0 + C - 0.00569 - 0.00478 * std::sin(omega * Deg));
     }
 
-    // Lunar subsolar point (exobem/ephemeris/moon.py)
+    // Lunar subsolar point
     void moonSubsolar(Real64 jd, Real64 &lonSS, Real64 &latSS, Real64 &r)
     {
         Real64 const T = (jd - 2451545.0) / 36525.0;
@@ -96,7 +96,7 @@ namespace {
         latSS = 1.5424 * std::sin((lamSun - Om) * Deg);
     }
 
-    // Mars areocentric solar coordinates, Allison & McEwen (2000) / Mars24 (exobem/ephemeris/mars.py)
+    // Mars areocentric solar coordinates, Allison & McEwen (2000) / Mars24
     struct Areocentric
     {
         Real64 Ls, eotDeg, declDeg, rAU, mstH;
@@ -137,13 +137,13 @@ namespace {
 
     Real64 horizonVisibleFraction(Real64 elevDeg, Real64 horizonDeg, Real64 sunRadiusDeg)
     {
-        // area of a uniform disk above a straight horizon (ExoBEM solar.horizon_visible_fraction)
+        // area of a uniform disk above a straight horizon
         Real64 const x = clamp((elevDeg - horizonDeg) / sunRadiusDeg, -1.0, 1.0);
         return (std::acos(-x) + x * std::sqrt(1.0 - x * x)) / Constant::Pi;
     }
 
     // ------------------------------------------------------------------------------------ regolith column
-    // One-dimensional implicit model of the planetary ground (exobem/environment/regolith.py)
+    // One-dimensional implicit model of the planetary ground (after Hayne et al. 2017)
     struct RegolithColumn
     {
         Real64 depth = 3.0;
@@ -315,7 +315,7 @@ namespace {
         }
     };
 
-    // Periodic equilibrium for a forcing that repeats with its own length (ExoBEM RegolithColumn.equilibrate):
+    // Periodic equilibrium for a forcing that repeats with its own length:
     // run one period, rebuild the profile below zSkin from the period-mean temperature there so that it carries
     // the geothermal flux, repeat until the deep temperature changes by less than tol.
     void equilibrateColumn(RegolithColumn const &col, Real64 dt, std::vector<Real64> const &qAbs, std::vector<Real64> const &Ld,
@@ -1283,7 +1283,7 @@ namespace {
         }
     }
 
-    // Build the whole environment of the current run period (mirrors exobem.environment.sites)
+    // Build the whole environment of the current run period
     void generateEnvironment(EnergyPlusData &state)
     {
         auto &p = *state.dataPlanet;
@@ -1434,7 +1434,7 @@ namespace {
             // Mars
             constexpr Real64 w0 = 0.885, gAsym = 0.74, Rh = 3390.0 / 11.0;
             // sky emissivity e0 + e1*tau (cap 0.6) and dust re-emission fRe, calibrated to the MEDA/TIRS clear-season
-            // mean (~30 W/m2) and the 2018 storm (sol-mean air -4 K): ExoBEM studies/calibrate_mars_storm_ir.py
+            // mean (~30 W/m2) and the 2018 storm (sol-mean air -4 K)
             constexpr Real64 kappa = 0.6, lagH = 0.5, e0 = 0.12, e1 = 0.10, fRe = 0.20;
             RegolithColumn col = RegolithColumn::mars(p.regolithThermalInertia, p.regolithAlbedo, p.regolithEmissivity);
             col.build();

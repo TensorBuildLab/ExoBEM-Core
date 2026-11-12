@@ -6,9 +6,8 @@ Thermonaut is a research fork of EnergyPlus v26.2.0 (BSD-3 + DOE naming clause; 
 Moon and Mars, keeping Earth behaviour bit-for-bit unchanged when no planetary input is given.
 
 - Fork source (branch `planetary`): C:\Users\liangzhang1\Documents\Claude\exo-fork  (src/EnergyPlus, third_party, idd/Energy+.idd.in)
-- Reference physics already implemented and verified in Python (read for equations/values, do not edit):
-  C:\Users\liangzhang1\Documents\Claude\EnergyPlus-for-extraterrestrial-space\exobem  (ephemeris/, environment/, convection.py,
-  simulation.py, thermal_control.py, gas.py, docs/research/parameter_dossier.md)
+- Reference physics: the planetary equations and parameter values from the cited literature (Allison & McEwen 2000;
+  Hayne et al. 2017; delta-Eddington dust two-stream; Sutherland gas properties).
 
 ## Planned architecture (so you can judge what must change)
 1. New input object `Site:PlanetaryBody` (Earth | Moon | Mars | Custom): gravity, solar day length (s), year length,

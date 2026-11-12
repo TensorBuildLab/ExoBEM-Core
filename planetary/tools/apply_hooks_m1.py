@@ -139,7 +139,7 @@ edit("SolarShading.cc",
      "                AvgSinSolarDeclin = state.dataWeather->TodayVariables.SinSolarDeclinAngle;\n"
      "                AvgCosSolarDeclin = state.dataWeather->TodayVariables.CosSolarDeclinAngle;\n"
      "                AvgEqOfTime = state.dataWeather->TodayVariables.EquationOfTime;\n            }\n")
-# isotropic sky off-Earth (exobem default); the Perez model is an Earth fit
+# isotropic sky off-Earth; the Perez model is an Earth fit
 edit("SolarShading.cc",
      "    F1 = max(0.0, F11R[i] + F12R[i] * Delta + F13R[i] * ZenithAng);\n    F2 = F21R[i] + F22R[i] * Delta + F23R[i] * ZenithAng;\n",
      "    F1 = max(0.0, F11R[i] + F12R[i] * Delta + F13R[i] * ZenithAng);\n    F2 = F21R[i] + F22R[i] * Delta + F23R[i] * ZenithAng;\n"

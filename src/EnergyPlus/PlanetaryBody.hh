@@ -9,7 +9,7 @@
 //   * an environment generator that replaces the weather file values (sun, sky, ambient, regolith),
 //   * exterior and interior convection for any gas, pressure and gravity,
 //   * a validator that rejects objects that need Earth weather or outdoor air.
-// It is a port of the verified Python reference model ExoBEM (https://github.com/TensorBuildLab/ExoBEM).
+// Its equations and their verification are documented in planetary/DESIGN.md and planetary/VERIFICATION.md.
 // With no Site:PlanetaryBody object (or Body = Earth) nothing in this module changes any result.
 
 #ifndef PlanetaryBody_hh_INCLUDED
@@ -44,7 +44,7 @@ namespace Planetary {
         Num
     };
 
-    // Constants shared with the Python reference (exobem/constants.py)
+    // Physical constants
     constexpr Real64 SolarIrradiance1AU = 1361.0; // W/m2 (Kopp & Lean 2011)
     constexpr Real64 CosmicBackgroundK = 2.725;   // K
     constexpr Real64 SunAngularRadius1AU = 0.2666; // deg
@@ -53,7 +53,7 @@ namespace Planetary {
     constexpr Real64 MoonGravity = 1.625;
     constexpr Real64 MarsGravity = 3.721;
 
-    // Simple ideal gas with Sutherland-law transport properties (exobem/gas.py)
+    // Simple ideal gas with Sutherland-law transport properties
     struct Gas
     {
         Real64 molarMass = 0.0289647; // kg/mol
@@ -106,6 +106,9 @@ namespace Planetary {
     Real64 exteriorConvection(EnergyPlusData &state, int surfNum, Real64 TSurfK, Real64 TAirK);
     Real64 interiorConvection(EnergyPlusData &state, int surfNum, Real64 TSurfC, Real64 TAirC);
     Real64 groundLongwaveTempC(EnergyPlusData const &state, Real64 defaultC);
+    // Mean outer-face temperature of a surface under the period-mean planetary environment (steady radiative balance);
+    // used to start conduction profiles near their steady state (regolith time constants are months to years).
+    Real64 meanOuterFaceTempC(EnergyPlusData &state, int surfNum);
     // Cell temperature [K] of a PV module on surface surfNum off-Earth: both faces radiate to sky and regolith,
     // plus convection in the Martian atmosphere; qNet = absorbed solar minus electric output [W/m2].
     Real64 pvCellTemperatureK(EnergyPlusData &state, int surfNum, Real64 qNet);
@@ -113,7 +116,7 @@ namespace Planetary {
     // used to start conduction profiles near their steady state (regolith time constants are months to years).
     Real64 meanOuterFaceTempC(EnergyPlusData &state, int surfNum);
 
-    // Mixed natural/forced convection for any gas (exobem/convection.py, "physical" family)
+    // Mixed natural/forced convection for any gas
     Real64 mixedConvection(
         Gas const &gas, Real64 TSurfK, Real64 TAirK, Real64 P, Real64 g, Real64 cosUp, Real64 V, Real64 Lvert, Real64 Lhoriz, Real64 Lforced);
 

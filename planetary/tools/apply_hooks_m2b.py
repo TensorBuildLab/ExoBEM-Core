@@ -1,5 +1,4 @@
-"""Thermonaut M2b patch set: physics corrections from the independent equation review of ExoBEM (kept identical
-in both codes).
+"""Thermonaut M2b patch set: physics corrections from an independent review of the planetary equations.
 
 Run from the repository root:  python planetary/tools/apply_hooks_m2b.py   (idempotent)
 
@@ -36,7 +35,7 @@ edit(C, '''    Real64 horizonVisibleFraction(Real64 elevDeg, Real64 horizonDeg, 
         return clamp((elevDeg - horizonDeg + sunRadiusDeg) / (2.0 * sunRadiusDeg), 0.0, 1.0);
     }''', '''    Real64 horizonVisibleFraction(Real64 elevDeg, Real64 horizonDeg, Real64 sunRadiusDeg)
     {
-        // area of a uniform disk above a straight horizon (ExoBEM solar.horizon_visible_fraction)
+        // area of a uniform disk above a straight horizon
         Real64 const x = clamp((elevDeg - horizonDeg) / sunRadiusDeg, -1.0, 1.0);
         return (std::acos(-x) + x * std::sqrt(1.0 - x * x)) / Constant::Pi;
     }''', "area of a uniform disk above a straight horizon")
@@ -51,7 +50,7 @@ edit(C, '''    return pMean * (1.0 + 0.074 * std::sin(L - 26.0 * Deg) + 0.055 * 
 
 # periodic equilibrium of the regolith column
 edit(C, '''    // trailing running mean over k samples (current included), padded with the mean of the first k''',
-     '''    // Periodic equilibrium for a forcing that repeats with its own length (ExoBEM RegolithColumn.equilibrate):
+     '''    // Periodic equilibrium for a forcing that repeats with its own length:
     // run one period, rebuild the profile below zSkin from the period-mean temperature there so that it carries
     // the geothermal flux, repeat until the deep temperature changes by less than tol.
     void equilibrateColumn(RegolithColumn const &col, Real64 dt, std::vector<Real64> const &qAbs, std::vector<Real64> const &Ld,

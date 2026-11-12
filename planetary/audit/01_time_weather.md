@@ -45,7 +45,7 @@ rounding), minute = 1 771.84 s. Mars sol 88 775.244 s → **hour = 3 698.97 s**,
 | 5  | 720 s | 739.8 s | 21 262 s (5.9 h): lowest value that passes the CTF limit |
 | 6  | 600 s | 616.5 s | 17 718 s |
 | 20 (forced if CondFD, SimulationManager.cc:920-926) | 180 s | 184.9 s | 5 316 s; CondFD inner Δt stays 266 s > 200 s target (HeatBalFiniteDiffManager.cc:618-623) |
-| 60 (max) | 60 s | 61.65 s | **1 771.8 s** (matches the 1 800 s of the Python reference `moon_site(dt=1800)`) |
+| 60 (max) | 60 s | 61.65 s | **1 771.8 s** |
 | Min HVAC sub-step (1 planetary min, DataConvergParams.hh:175) | 60 s | 61.65 s | 1 771.8 s = zone step at 60/h → no sub-steps |
 | Sizing averaging window default = 1 h (SizingManager.cc:2632-2649) | 3 600 s | 3 699 s | 106 310 s |
 
@@ -83,7 +83,7 @@ real 3 600 s hour (must stay 3 600); **I** = index / label (leave alone).
 | T17 | WeatherManager.cc:2477-2519, 2872-2918, 8304-8315 | EPW sentinels and range checks: DryBulb ≥ 99.9 = missing (replaced by 6 °C). Out of range < −90 or > 70 °C. Pressure ≤ 31 000 or > 120 000 Pa → **replaced** by StdBaroPress. Wind > 40 m/s | Earth climate | Moon day (≈ 120 °C) becomes 6 °C. Moon night (−170 °C) gets flagged. Mars 600 Pa becomes about 101 kPa without any error | Do not use EPW for planets. Use the generator (T16), or a new planetary CSV reader behind the same hook. Never route planetary data through `InterpretWeatherDataLine` | P0 |
 | T18 | WeatherManager.cc:2101-2135, 2223-2232 | `SetCurrentWeather`: psychrometrics on outdoor air at `OutBaroPress` (`PsyWFnTdbRhPb`, `PsyTwbFnTdbWPb`, `PsyTdpFnWPb`, `PsyRhoAirFnPbTdbW`, `PsyHFnTdbW`) | Moist air, P ≈ 101 kPa | P = 0 (Moon) gives 0/0 → NaN humidity ratio. Mars: CO₂ treated as moist air | Planetary branch after copying `today`: OutHumRat = 0, OutWetBulb = OutDewPoint = OutDryBulb (or −100 °C), OutAirDensity / OutEnthalpy from the body gas model, IsRain = IsSnow = false. Keep EMS overrides | P0 |
 | T19 | WeatherManager.cc:2087-2097 | Ground temps `getGroundTempAtTimeInMonths(..., Month)`, `GndReflectance(Month)`, `CalcWaterMainsTemp` | Monthly Earth values | A 13-lunar-day run falls entirely in calendar "January", so ground BC temperature is constant and arbitrary | In planetary mode, set `GroundTemp[*]` from the regolith model (per timestep) and `GndReflectance` from body albedo. Water mains from a schedule (T30) | P0 (ground-contact floors), else P1 |
-| T20 | WeatherManager.cc:4129-4235 (called at 2847 and 3597) | `CalculateDailySolarCoeffs`: Earth Fourier series in `X = 2π·DayOfYear/366`. Gives sin δ, EoT, `AnnVarSolConstant` (1 ± 0.033), ASHRAE A/B/C | Earth orbit | Wrong declination / EoT / distance | Not called on the planetary path. The generator supplies EoT [planetary h], sin/cos δ and r [AU] per day from the ephemeris (Mars24 Allison-McEwen; Moon mean elements + Cassini, as in `exobem/ephemeris`). Keep the Earth code unchanged | P0 |
+| T20 | WeatherManager.cc:4129-4235 (called at 2847 and 3597) | `CalculateDailySolarCoeffs`: Earth Fourier series in `X = 2π·DayOfYear/366`. Gives sin δ, EoT, `AnnVarSolConstant` (1 ± 0.033), ASHRAE A/B/C | Earth orbit | Wrong declination / EoT / distance | Not called on the planetary path. The generator supplies EoT [planetary h], sin/cos δ and r [AU] per day from the ephemeris (Mars24 Allison-McEwen; Moon mean elements + Cassini). Keep the Earth code unchanged | P0 |
 | T21 | SolarShading.cc:9449-9504 (`SUN3`), called at 9060 and 9071 inside `PerformSolarCalculations` (8970-9095) | Second copy of the Earth declination / EoT series. Shadowing period average over `ShadowingCalcFrequency` (default 20 days, :463-470) | Earth orbit | Shading and sunlit fractions would use Earth sun paths | Add a planetary branch: `Planetary::dailySolar(state, dayOffset, sinDec, eot)` with dayOffset = Count − 1 from the current sim day. A 20-day period is fine (Moon δ ≤ 1.54°; Mars changes < 0.4°/sol) | P0 |
 | T22 | WeatherManager.cc:4237-4274, 4276-4335; SolarShading.cc:5050-5085, 9506-9534 | Hour angle `15·(12 − (t + EoT)) + (TZM − Lon)`. `TS1TimeOffset = −0.5` (DataEnvironment.hh). Sun evaluated at the end of the timestep | 15° per hour | **Correct** with planetary hours, as long as EoT is in planetary hours and TZM is defined | Leave the code alone. In planetary mode set `TimeZoneMeridian = Longitude` (local mean solar time; Mars LMST) and EoT_h = eot_deg/15 (Mars24 sign: LTST = LMST + EOT/15; both use east-positive longitude). Skip `CheckLocationValidity` / `GetSTM` time-zone warnings (4498-4583, 7433) | P0 |
 | T23 | WeatherManager.cc:8318-8376, 3046-3124 | Linear hourly → timestep interpolation. Solar uses mid-hour weights (`SolarInterpolation`) | EPW hourly integrals | On the Moon one "hour" is 29.5 Earth h. Interpolated irradiance is inconsistent with `SunIsUp` near the terminator | The generator writes `(ts,hr)` values directly at the same instant as `DetermineSunUpDown` (t = hr−1 + ts/N, or hr − 0.5 when N = 1). No interpolation | P0 |
@@ -168,7 +168,7 @@ real 3 600 s hour (must stay 3 600); **I** = index / label (leave alone).
 
 ### 3.2 Planetary environment generator (weather + sun)
 
-New module `PlanetaryEnvironment.{hh,cc}`, ported from `exobem/ephemeris` and `exobem/environment`. It keeps no weather
+New module `PlanetaryEnvironment.{hh,cc}`, holding the ephemerides and the environment model. It keeps no weather
 state of its own; it writes into the existing structures.
 
 - `void ReadDay(state, int dayToRead, int envrn)`, called from `Weather::ReadWeatherForDay` (WeatherManager.cc:2268)
@@ -216,7 +216,7 @@ Slinky 356-day typo (report it upstream instead).
 ## 4. Open questions / risks
 
 1. **Moon time resolution.** 1 771.8 s is the floor, and HVAC sub-stepping is lost at 60 steps/h. Ideal loads and the
-   envelope are fine (the Python reference uses 1 800 s). On/off thermostats and fast equipment are not. A finer step
+   envelope are fine. On/off thermostats and fast equipment are not. A finer step
    would mean lifting the 60 cap: `MinutesInTimeStep` becomes Real or seconds-based, and the 1440-minute schedule grid
    and ScheduleManager.cc:209-236 must be rebuilt. That is a large, risky change. Recommend deferring it and first
    allowing sub-minute HVAC sub-steps (T13).
@@ -235,7 +235,7 @@ Slinky 356-day typo (report it upstream instead).
 6. **Bit-for-bit risk.** It is low, but any replaced expression must keep its operand order (e.g. `a / b / 3600` must
    become `a / b / SecInHour`, not `a / (b * SecInHour)`). Review each of the ~95 edits.
 7. **CTF (T10)** belongs to the constructions audit as well. Make sure only one agent implements it, and verify it
-   against the Python conduction model at Moon Δt (1 772 s and 21 262 s).
+   against an analytical conduction solution at Moon Δt (1 772 s and 21 262 s).
 8. **Ground / regolith BC.** Ground-contact floors need the regolith model from day 1. The Earth ground-temperature
    objects should be rejected in planetary mode rather than silently used.
 9. **Design days.** Is sizing needed for the first run? If not, P0 can be "planetary mode forbids DesignDay and the

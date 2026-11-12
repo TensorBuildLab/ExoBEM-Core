@@ -111,3 +111,11 @@ venv/
 
 # planetary test runs
 planetary/tests/_runs/
+
+# Thermonaut paper: files with author details and personal folders stay local
+planetary/paper/submission_JBPS/Thermonaut_title_page.docx
+planetary/paper/submission_JBPS/Thermonaut_cover_letter.docx
+planetary/paper/**/*working folder*/
+~$*
+planetary/paper/**/__pycache__/
+planetary/paper/submission_JBPS/review_response.md

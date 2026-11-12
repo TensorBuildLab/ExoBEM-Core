@@ -1,0 +1,41 @@
+{
+ "moon_equator": {
+  "hours": 720,
+  "first_hour": 696,
+  "cooling_gen_kWh": 2302.434688988728,
+  "cooling_pwf_kWh": 2302.434999156785,
+  "cooling_rmse_W": 0.00043079000669678745,
+  "cooling_diff_pct": 1.3471307513945874e-05,
+  "ground_rmse_K": 5.6188848842519635e-05,
+  "top_surface": "SHELL_00",
+  "top_outside_rmse_K": 9.473756994844002e-06,
+  "top_inside_rmse_K": 1.2050742238288254e-06
+ },
+ "mars_jezero": {
+  "hours": 384,
+  "first_hour": 360,
+  "cooling_gen_kWh": 719.4085599542425,
+  "cooling_pwf_kWh": 717.773147433331,
+  "cooling_rmse_W": 4.31793954627161,
+  "cooling_diff_pct": -0.22732736471964277,
+  "ground_rmse_K": 6.017943246523335e-05,
+  "top_surface": "SHELL_00",
+  "top_outside_rmse_K": 0.010642350391588914,
+  "top_inside_rmse_K": 0.014981483341093746
+ },
+ "lunar_habitat": {
+  "hours": 648,
+  "first_hour": 72,
+  "cooling_gen_kWh": 3722.9510403610607,
+  "cooling_pwf_kWh": 3722.9443951920844,
+  "cooling_rmse_W": 0.05436351539486975,
+  "cooling_diff_pct": -0.0001784919786529393,
+  "latent_gen_kWh": 138.1904828862687,
+  "latent_pwf_kWh": 138.19047970960918,
+  "latent_diff_pct": -2.2987541981045467e-06,
+  "ground_rmse_K": 5.4692704370760155e-05,
+  "top_surface": "ROOF",
+  "top_outside_rmse_K": 0.000233795300220963,
+  "top_inside_rmse_K": 0.00014617455792737517
+ }
+}

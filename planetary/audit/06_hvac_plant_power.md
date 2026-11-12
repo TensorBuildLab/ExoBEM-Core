@@ -85,7 +85,7 @@ P2 = rare module, flag "unsupported off-Earth".
 | H32 | Plant/PlantManager.cc:2841, 2857; PlantPressureSystem.cc:326-327; SteamCoils.cc:555 (`101325.0`), 676, 1090, 1234 | plant/steam node `Press = StdBaroPress`, condensate sat temperature at `StdBaroPress` | Loop open to 1 atm | Bookkeeping for liquid loops. Steam condensate temperature follows the cabin pressure once H01 is applied. | Leave (H01 covers it). Steam systems: P2. | P2 |
 | H33 | FluidProperties.cc:106-114 (default glycol/water table -35..125 C), 4132-4170 (`getSpecificHeat` out-of-range: recurring warning + clamp) | liquid properties `f(T)` only; no boiling or freezing check | Loops stay liquid near 1 atm | Water at 70 kPa boils at ~90 C, so 82 C hot-water loops are marginal and not detected. A radiator loop at lunar night (sink ~100 K) runs far below -35 C: values clamp silently (warning only) and freezing is not detected. | Recommend user-defined `FluidProperties:Name` (Glycol type with user `FluidProperties:Temperatures/Concentration` tables) for ammonia or HFE/Galden coolants down to -100 C. Add an off-Earth severe warning when a loop's minimum loop temperature is below the fluid's lowest table temperature. Add optional loop-pressure-based boiling check (P2). | P1 |
 | H34 | WeatherManager.cc:7047-7160 (`CalcWaterMainsTemp`, Correlation from annual OA temperature) | `Site:WaterMainsTemperature` | Buried pipes track OA climate | The correlation is invalid off-Earth. | Off-Earth: require `Schedule` method (water from storage tank). | P2 |
-| H35 | (none; reference: exobem/thermal_control.py) | no object rejects heat to space | Heat always leaves via air or ground | The habitat cannot reject cabin heat in a plant model. | New plant component `HeatRejection:Radiator` (section 3.3). | P1 |
+| H35 | (none) | no object rejects heat to space | Heat always leaves via air or ground | The habitat cannot reject cabin heat in a plant model. | New plant component `HeatRejection:Radiator` (section 3.3). | P1 |
 
 ### 2.4 Electric power
 
@@ -102,7 +102,7 @@ P2 = rare module, flag "unsupported off-Earth".
 | H44 | ElectricPowerServiceManager.cc:3846-3896 | `Storage:Simple` energy `= P * TimeStepSysSec` | none | Works if `TimeStepSysSec` follows the planetary hour. | None. | - |
 | H45 | ElectricPowerServiceManager.cc:2417-2600, 2908-3012, 4516-4850 | inverters/converters/transformer thermal losses to zone or outdoors | - | They work. Losses to "outdoors" are simply lost (acceptable). | None. Works as-is. | - |
 | H46 | MicroturbineElectricGenerator.cc:756-807, 1293-1305; CTElectricGenerator.cc:377; ICEngineElectricGenerator.cc; MicroCHPElectricGenerator.cc; FuelCellElectricGenerator.cc (+ `Generator:FuelCell:AirSupply`) | combustion/air-breathing generators | Atmospheric O2 intake | Meaningless (no oxidiser). | Error off-Earth. A future `Generator:FuelCell:H2O2` would be new work (P2). | P2 |
-| H47 | WindTurbine.cc:955-959; DataEnvironment.cc:191-216 (`OutBaroPressAt`: g 9.80665, M 0.028964, lapse -0.0065) | air density for rotor power | Earth air and standard atmosphere | Moon: no wind. Mars: density uses R_air instead of R_CO2 (about 1.5x low) and an Earth lapse rate. | Moon: error. Mars: density from planetary gas model (`exobem/gas.py MARS_CO2`); P2. | P2 |
+| H47 | WindTurbine.cc:955-959; DataEnvironment.cc:191-216 (`OutBaroPressAt`: g 9.80665, M 0.028964, lapse -0.0065) | air density for rotor power | Earth air and standard atmosphere | Moon: no wind. Mars: density uses R_air instead of R_CO2 (about 1.5x low) and an Earth lapse rate. | Moon: error. Mars: density from planetary gas model; P2. | P2 |
 | H48 | PhotovoltaicThermalCollectors.cc:1150-1152, 1369 (`gravity 9.81`); SolarCollectors.cc:1154-1262 (efficiency vs `SurfOutDryBulbTemp`), 1384, 1791-1822, 1939, 2039 (`gravity 9.806`); TranspiredCollector.cc | collectors with convective losses, natural convection in gaps | Earth air, Earth g | Loss correlations are invalid in vacuum. | Error for `SolarCollector:UnglazedTranspired*`, PVT. Flat plate / ICS: P2 (unsupported off-Earth warning). | P2 |
 | H49 | ElectricPowerServiceManager.cc:484-529 | `Electricity:Purchased` / facility net | Grid exists | Purchased electricity off-Earth is really unmet demand. | Rename in reports off-Earth ("Unmet Electric Demand") or add an output variable. Cosmetic. | P2 |
 
@@ -224,7 +224,7 @@ Outdoor Air or use a make-up gas model", and set `ErrorsFound = true`. Nothing e
   - Design Water Flow Rate {m3/s, autosizable}; Nominal Capacity {W, autosizable, at design sink};
   - Sink Temperature Method (RadiativeBalance | Schedule); Sink Temperature Schedule;
   - Minimum Outlet Temperature (freeze protection / bypass setpoint) {C}; Sizing Factor.
-- **Physics.** Follow `exobem/thermal_control.py`.
+- **Physics.** Radiative balance with the environment:
   - Sink temperature: `T_sink^4 = [alpha*(G_b+G_sky+G_gnd) + eps*sigma*(F_sky*T_sky^4 + F_gnd*T_gnd^4)] / (eps*sigma)`.
     `T_sky` is `state.dataEnvrn->SkyTemp` (2.7 K Moon, downwelling-equivalent Mars). `T_gnd` is the planetary regolith
     surface temperature (regolith audit; per-surface `SurfaceProperty:SurroundingSurfaces` ground temperature schedule

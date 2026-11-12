@@ -1,20 +1,20 @@
 {
  "PV_H": {
   "steps": 9600,
-  "residual_p99_W_m2": 0.013831572389945564,
+  "residual_p99_W_m2": 0.01377823182955609,
   "steps_over_1W": 65,
   "of_which_below_30W": 58,
-  "Tcell_sunlit_max_K": 336.4954315521728,
-  "Tcell_min_K": 78.97096767992684,
-  "eta_sunlit_mean": 0.09631531968812687
+  "Tcell_sunlit_max_K": 336.4955424952601,
+  "Tcell_min_K": 78.97204402793392,
+  "eta_sunlit_mean": 0.09630848749184771
  },
  "PV_E": {
   "steps": 9600,
-  "residual_p99_W_m2": 0.0697607471337449,
-  "steps_over_1W": 22,
+  "residual_p99_W_m2": 0.0696364336402735,
+  "steps_over_1W": 21,
   "of_which_below_30W": 0,
-  "Tcell_sunlit_max_K": 359.2007702002497,
-  "Tcell_min_K": 78.97206925301538,
-  "eta_sunlit_mean": 0.08275101121881548
+  "Tcell_sunlit_max_K": 359.2087607392547,
+  "Tcell_min_K": 78.97204402793395,
+  "eta_sunlit_mean": 0.08275025780659993
  }
 }

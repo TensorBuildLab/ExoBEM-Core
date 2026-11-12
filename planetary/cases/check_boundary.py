@@ -1,6 +1,6 @@
-"""Analytical checks of Thermonaut's exterior boundary, independent of ExoBEM.
+"""Analytical checks of Thermonaut's exterior boundary.
 
-1. Moon (vacuum), NASA-class lunar habitat on legs, every outer face, every 3-minute step:
+1. Moon (vacuum), NASA-informed lunar habitat on legs, every outer face, every 3-minute step:
    * the convective heat gain must be exactly zero;
    * the net long-wave gain reported by the engine must equal eps*sigma*[F_sky (T_sky^4 - T^4) + F_g (T_g^4 - T^4)],
      with F_sky = (1 + cos tilt)/2, F_g = (1 - cos tilt)/2 (no sky view to air off-Earth), the sky at the reported
