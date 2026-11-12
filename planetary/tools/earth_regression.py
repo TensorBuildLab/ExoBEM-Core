@@ -29,7 +29,7 @@ def run(exe_dir: Path, idf: Path, out: Path):
     if out.exists():
         shutil.rmtree(out)
     out.mkdir(parents=True)
-    epw = ROOT / "weather" / WEATHER["default"]
+    epw = ROOT / "weather" / WEATHER.get("run", WEATHER["default"])
     cmd = [str(exe_dir / "energyplus.exe"), "-w", str(epw), "-d", str(out), str(idf)]
     p = subprocess.run(cmd, capture_output=True, text=True, timeout=3600)
     return p.returncode, (out / "eplusout.err").read_text(errors="ignore") if (out / "eplusout.err").exists() else ""
@@ -54,6 +54,7 @@ def compare(a: Path, b: Path):
     if len(ea) != len(eb):
         return dict(status=f"length differs {len(ea)} vs {len(eb)}")
     ndiff, maxrel, first = 0, 0.0, None
+    nvals = sum(len(NUM.findall(l)) for l in ea)
     for la, lb in zip(ea, eb):
         if la == lb:
             continue
@@ -65,7 +66,7 @@ def compare(a: Path, b: Path):
                 rel = abs(fx - fy) / max(abs(fx), abs(fy), 1e-12)
                 maxrel = max(maxrel, rel)
                 first = first or (la, lb)
-    return dict(status="identical" if ndiff == 0 else "DIFFERENT", n_diff=ndiff, max_rel=maxrel, first=first)
+    return dict(status="identical" if ndiff == 0 else "DIFFERENT", n_values=nvals, n_diff=ndiff, max_rel=maxrel, first=first)
 
 
 def main():
@@ -74,8 +75,10 @@ def main():
     ap.add_argument("--fork", default=str(ROOT / "build" / "Products"))
     ap.add_argument("--out", default=str(ROOT.parent / "exo-runs" / "earth_regression"))
     ap.add_argument("--jobs", type=int, default=6)
+    ap.add_argument("--weather", default=WEATHER["default"], help="EPW file name in weather/")
     ap.add_argument("files", nargs="*", default=DEFAULT_FILES)
     args = ap.parse_args()
+    WEATHER["run"] = args.weather
     out = Path(args.out)
     results = {}
 
@@ -92,7 +95,8 @@ def main():
     with ThreadPoolExecutor(args.jobs) as ex:
         for f, r in ex.map(one, args.files):
             results[f] = r
-            print(f"{f:55s} {r['status']}" + (f"  n={r.get('n_diff')} maxrel={r.get('max_rel'):.2e}" if r.get("n_diff") else ""))
+            print(f"{f:55s} {r['status']}" + (f"  values={r['n_values']:,}" if "n_values" in r else "")
+                  + (f"  n={r.get('n_diff')} maxrel={r.get('max_rel'):.2e}" if r.get("n_diff") else ""))
     (out / "summary.json").write_text(json.dumps(results, indent=1, default=str))
     n_ok = sum(r["status"] == "identical" for r in results.values())
     print(f"\n{n_ok}/{len(results)} identical")

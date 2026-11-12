@@ -1,4 +1,4 @@
-"""NASA-class lunar surface habitat in Thermonaut and in ExoBEM, on the same planetary weather file.
+"""NASA-informed lunar surface habitat in Thermonaut and in ExoBEM, on the same planetary weather file.
 
 The model is ExoBEM's example lunar_surface_habitat.json (4 crew, 174 m3 vertical cylinder on legs, beta cloth /
 MLI / aluminium / panel, 56.5 kPa / 34 % O2 cabin, 20-25 C, RH 30-60 %, life support, electrolysis, fans,

@@ -1,12 +1,13 @@
-# Thermonaut verification (M2d)
+# Thermonaut verification (M2e)
 
 All runs: Windows 11, MSVC 14.44 (VS 2022 Build Tools), Release build of v26.2.0 + Thermonaut changes
-(patch sets m1, m1b, m1c, m2, m2b, m2c, m2d in `planetary/tools/`).
+(patch sets m1, m1b, m1c, m2, m2b, m2c, m2d, m2e in `planetary/tools/`).
 
 ## 1. Earth: identical to EnergyPlus v26.2.0
 
 `planetary/tools/earth_regression.py` runs each example file with the unmodified v26.2.0 build and with
-Thermonaut (Chicago O'Hare TMY3) and compares every number of the full ESO time series.
+Thermonaut and compares every number of the full ESO time series (about 4.7 million values per weather file),
+with Chicago O'Hare TMY3 and, from M2e, also Phoenix Sky Harbor TMY3 (`--weather`).
 
 | Example file | Covers | Result |
 |---|---|---|
@@ -26,13 +27,48 @@ Thermonaut (Chicago O'Hare TMY3) and compares every number of the full ESO time 
 | SolarCollectorFlatPlateWater | solar thermal collector | identical |
 | HAMT_HourlyProfileReport | (fails in both builds with this weather file; not a fork issue) | n/a |
 
-**14 / 14 runnable files are bit-for-bit identical** after every patch set, including the PV and weather-file
-hooks of M2 and the start-up and Mars long-wave changes of M2c–M2d.
+**14 / 14 runnable files are bit-for-bit identical** with both weather files after every patch set, including the
+PV and weather-file hooks of M2, the start-up and Mars long-wave changes of M2c–M2d and the input checks of M2e.
+The claim covers these files, climates and this build (MSVC 14.44, Windows 11).
 
 ## 2. Unit tests
 
 The full EnergyPlus unit-test suite (`energyplus_tests.exe`, `BUILD_TESTING=ON`) passes on the fork:
 **2379 tests from 33 test suites, 2379 passed, 0 failed** (3.0 min).
+
+## 2a. Planetary tests (M2e)
+
+The upstream unit tests do not exercise the planetary mode. `planetary/tests/run_planetary_tests.py` runs 23
+end-to-end tests: valid habitat inputs with and without a weather file; weather files for the wrong body, with a
+missing column, negative irradiance, missing ground temperature, albedo above 1, unequal spacing, short coverage or
+no PWF header (rejected with the record number); refusal of infiltration, Earth-fitted PV models, a battery without
+a zone, a negative horizon, SimpleCombined outside convection, one time step per hour, unscheduled water mains,
+EcoRoof, windows, an air-cooled chiller, F-factor floors and the CO2 balance; and `Site:PlanetaryBody` with
+Body = Earth, whose output is identical to the same file without it. **23 / 23 pass** (`tests/test_results.json`).
+
+`planetary/tools/rerun_cases_check.py` reruns every verification case below with the current build and checks
+that its output is identical to the recorded one: all six cases are identical with M2e.
+
+## 2b. Audit traceability (M2e)
+
+Every row of the six audit reports (271 rows: 252 prioritized findings and 19 notes) was traced to the v26.2.0
+source and to its disposition in Thermonaut: `audit/inventory/audit_inventory.csv` (merged by
+`audit/inventory/merge_inventory.py`). 264 citations were found at the stated line, 3 had moved, 4 cite no line.
+Dispositions: modified 62, refused 91, avoided by design 65, deferred 22, harmless 31. The pass found refusals that
+DESIGN.md listed but the validator did not implement; M2e implements them and adds a backstop that stops a
+planetary run if any outdoor-air node exists. The two open P0 rows are the one-step lag of the exterior long-wave
+coefficients, which EnergyPlus also uses on Earth.
+
+## 2c. Start-up and sensitivity (M2e)
+
+`planetary/cases/robustness.py` (results in `cases/robustness.json`): the corrected start of the Mars module differs
+from a 25-month spin-up by +0.07 % over the final 16 days; on the Moon a two-lunation run differs from a 36-month
+spin-up by +1.2 % (lunar design studies should spin up for a year). The Mars result changes by at most 0.25 % for a
+minimum warm-up of 1 day, CondFD discretization constant 10 or 90, or a 2- or 6-minute step, and by +0.83 % for a
+20-day warm-up. One-at-a-time input sensitivity of the cooling energy: lunar habitat MLI R ±25 % gives −3.4 / +2.2 %,
+beta-cloth optics up to ±0.7 %, regolith properties and a 5° horizon below 0.35 %; Mars module dust optical depth
+0.3 / 1.5 gives +2.9 / −2.6 %, regolith thermal inertia and albedo about ±0.5 %, wind below 0.1 %.
+`cases/mars_convection_scope.py`: Ra 8e2–8e4, Re 2.0e4–2.8e4, Pr 0.77, Knudsen number below 2e-5 (continuum).
 
 ## 3. Moon and Mars: independent references and closed-form checks
 
@@ -55,14 +91,14 @@ The Mars bias is the EnergyPlus convention of evaluating the sun at the end of e
 
 The engine's own environment generator at the lunar equator (second lunation): regolith surface 388 K at noon and
 94 K before dawn (Diviner equatorial ≈ 385–390 K and ≈ 95 K; Vasavada et al. 2012, Hayne et al. 2017); 258 K at
-3 m depth, consistent with ≈ 252–256 K measured near 1 m plus the geothermal gradient.
+3 m depth; at 1 m, the depth of the reference, the engine gives 253 K against ≈ 252–256 K (0.5 m 252 K, 2 m 256 K).
 
 ### 3.3 Exterior boundary against closed-form balances
 
 `planetary/cases/check_boundary.py` reruns two cases with 3-minute outputs and checks the outer faces against
 their defining equations:
 
-* **Moon, vacuum** (NASA-class habitat, every outer face, 201,600 face-steps): convective heat gain exactly zero;
+* **Moon, vacuum** (NASA-informed habitat, every outer face, 201,600 face-steps): convective heat gain exactly zero;
   outer-face balance (solar + long-wave + convection + conduction) closes to rounding; net long-wave equal to
   εσ[F_sky(T_sky⁴ − T⁴) + F_g(T_g⁴ − T⁴)] within 0.64 W/m² RMSE (mean magnitude 82 W/m²; 99 % of steps within
   0.18 W/m²). The larger residuals (13–22 of 14,400 steps per wall) occur only in the step in which sunlight
@@ -104,7 +140,7 @@ high for about a day. M2d removes that transient (first-hour cooling within 68 W
 ExoBEM); the price is that the window agreement, which the old overshoot had partly offset, is now −0.16 % (Moon)
 and −1.2 % to −1.4 % (Mars).
 
-### 4.2 NASA-class lunar surface habitat (case `lunar_habitat`)
+### 4.2 NASA-informed lunar surface habitat (case `lunar_habitat`)
 
 ExoBEM's example `lunar_surface_habitat.json`: 4 crew, 174 m³ vertical cylinder on legs, beta cloth / MLI
 (R 19.2 m²K/W) / aluminium / panel, 56.5 kPa / 34 % O₂ cabin at 20–25 °C and RH 30–60 %, 14 kW of electric
@@ -150,7 +186,7 @@ from the previous step. Module emissivity is a constant 0.85 on both faces.
   from the M2c runs; the colder Martian environment raises the envelope heat flow and with it the slowly decaying
   start-up residual of the regolith cover (−0.66 % → −0.88 % with the generator). Earth results remain identical.
 * CondFD cannot resolve the 4 mm aluminium shell (stock check thickness < √(3αΔt)); in the regolith-module input
-  its heat capacity is lumped into the interior panel and its resistance (3·10⁻⁵ m²K/W) is dropped. The NASA-class
+  its heat capacity is lumped into the interior panel and its resistance (3·10⁻⁵ m²K/W) is dropped. The NASA-informed
   habitat uses CTF and keeps the aluminium.
 * Regolith covers have thermal time constants of months (Mars, 1 m) to years (Moon). Thermonaut starts CondFD
   walls from their steady k(T) profile and corrects it with the real inside-face temperature after warm-up; the

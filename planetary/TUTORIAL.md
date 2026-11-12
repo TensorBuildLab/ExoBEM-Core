@@ -1,6 +1,6 @@
 # Thermonaut tutorial: a lunar habitat in the EnergyPlus engine
 
-This tutorial builds Thermonaut and runs the NASA-class four-crew lunar habitat on a planetary weather file.
+This tutorial builds Thermonaut and runs the NASA-informed four-crew lunar habitat on a planetary weather file.
 No EPW file is needed. It then compares the results with the Python tool ExoBEM. Everything below was run on
 Windows 11 with Visual Studio 2022 Build Tools. On Linux or macOS, use the standard EnergyPlus CMake build.
 

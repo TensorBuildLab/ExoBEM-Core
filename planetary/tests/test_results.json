@@ -1,0 +1,145 @@
+{
+ "engine": "C:\\Users\\liangzhang1\\Documents\\Claude\\exo-fork\\build\\Products\\energyplus.exe",
+ "passed": 23,
+ "total": 23,
+ "tests": [
+  {
+   "name": "valid_habitat",
+   "description": "Habitat with crew/equipment OtherEquipment, InternalMass, thermostat, humidistat and ideal loads runs cleanly",
+   "passed": true,
+   "detail": ""
+  },
+  {
+   "name": "valid_generator",
+   "description": "Same habitat with the internal environment generator (calendar-only EPW, every weather value generated) runs cleanly",
+   "passed": true,
+   "detail": ""
+  },
+  {
+   "name": "pwf_wrong_body",
+   "description": "PWF for another body is rejected",
+   "passed": true,
+   "detail": ""
+  },
+  {
+   "name": "pwf_missing_column",
+   "description": "PWF without a required column is rejected",
+   "passed": true,
+   "detail": ""
+  },
+  {
+   "name": "pwf_negative_irradiance",
+   "description": "Negative irradiance is rejected with its record number",
+   "passed": true,
+   "detail": ""
+  },
+  {
+   "name": "pwf_missing_ground",
+   "description": "A missing (nan) ground temperature is rejected",
+   "passed": true,
+   "detail": ""
+  },
+  {
+   "name": "pwf_air_nan_vacuum",
+   "description": "nan air temperature (vacuum) is accepted",
+   "passed": true,
+   "detail": ""
+  },
+  {
+   "name": "pwf_bad_albedo",
+   "description": "Albedo above 1 is rejected",
+   "passed": true,
+   "detail": ""
+  },
+  {
+   "name": "pwf_unequal_spacing",
+   "description": "Records that are not equally spaced are rejected",
+   "passed": true,
+   "detail": ""
+  },
+  {
+   "name": "pwf_short_coverage",
+   "description": "A file that does not cover the run period is rejected",
+   "passed": true,
+   "detail": ""
+  },
+  {
+   "name": "pwf_not_pwf",
+   "description": "A file without the PWF header is rejected",
+   "passed": true,
+   "detail": ""
+  },
+  {
+   "name": "refuse_infiltration",
+   "description": "Infiltration is refused in planetary mode",
+   "passed": true,
+   "detail": ""
+  },
+  {
+   "name": "refuse_pv_battery",
+   "description": "Ulleberg dynamic PV and a Li-ion battery without a zone are both refused",
+   "passed": true,
+   "detail": ""
+  },
+  {
+   "name": "refuse_negative_horizon",
+   "description": "A negative horizon elevation is refused",
+   "passed": true,
+   "detail": ""
+  },
+  {
+   "name": "refuse_simplecombined",
+   "description": "Outside convection SimpleCombined (radiation folded into h) is refused",
+   "passed": true,
+   "detail": ""
+  },
+  {
+   "name": "refuse_timestep1",
+   "description": "One time step per hour (sun at mid-hour) is refused",
+   "passed": true,
+   "detail": ""
+  },
+  {
+   "name": "refuse_water_mains",
+   "description": "Water use without scheduled mains temperature is refused",
+   "passed": true,
+   "detail": ""
+  },
+  {
+   "name": "refuse_ecoroof",
+   "description": "EcoRoof material is refused",
+   "passed": true,
+   "detail": ""
+  },
+  {
+   "name": "refuse_window",
+   "description": "Windows are refused in this version",
+   "passed": true,
+   "detail": ""
+  },
+  {
+   "name": "refuse_aircooled_chiller",
+   "description": "An air-cooled chiller is refused",
+   "passed": true,
+   "detail": ""
+  },
+  {
+   "name": "refuse_ffactor",
+   "description": "F-factor ground floors (Earth ground temperatures) are refused",
+   "passed": true,
+   "detail": ""
+  },
+  {
+   "name": "refuse_co2_balance",
+   "description": "The CO2 balance (standard-pressure air) is refused",
+   "passed": true,
+   "detail": ""
+  },
+  {
+   "name": "earth_body_identical",
+   "description": "Site:PlanetaryBody with Body = Earth gives an identical ESO to the same file without it",
+   "passed": true,
+   "detail": ""
+  }
+ ]
+}

@@ -1,12 +1,12 @@
 {
  "PV_H": {
   "steps": 9600,
-  "residual_p99_W_m2": 0.013831572389931353,
+  "residual_p99_W_m2": 0.013831572389945564,
   "steps_over_1W": 65,
   "of_which_below_30W": 58,
   "Tcell_sunlit_max_K": 336.4954315521728,
   "Tcell_min_K": 78.97096767992684,
-  "eta_sunlit_mean": 0.0954049353259765
+  "eta_sunlit_mean": 0.09631531968812687
  },
  "PV_E": {
   "steps": 9600,

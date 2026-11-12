@@ -108,3 +108,6 @@ venv/
 .venv/
 
 .ccache/
+
+# planetary test runs
+planetary/tests/_runs/

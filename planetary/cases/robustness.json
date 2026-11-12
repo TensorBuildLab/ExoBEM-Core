@@ -1,0 +1,168 @@
+{
+ "kT": {
+  "max_change_per_iteration_K": [
+   26.51005710203787,
+   0.6701376935681189,
+   0.025603495201607984,
+   0.001249741799785653,
+   4.5058179992452096e-05,
+   2.3667271662475287e-06,
+   8.202679779856226e-08,
+   4.468539316349052e-09,
+   1.503970281646616e-10,
+   8.416378705078387e-12,
+   2.877698079828406e-13,
+   1.7763568394002505e-14
+  ],
+  "note": "iteration 1 starts from a linear profile; the engine uses 6 iterations"
+ },
+ "depth": {
+  "0.5": 252.14505751496986,
+  "1.0": 253.166133096923,
+  "2.0": 255.66520540476554,
+  "3.0": 258.279188819657
+ },
+ "startup": {
+  "base": {
+   "window_kWh": 719.4085599542425,
+   "first_hour_W": 1792.2754464939985,
+   "vs_base_pct": 0.0
+  },
+  "warmup_min1": {
+   "window_kWh": 717.5853143497704,
+   "first_hour_W": 1765.0708172016652,
+   "vs_base_pct": -0.2534367403951965
+  },
+  "warmup_min20": {
+   "window_kWh": 725.381029299353,
+   "first_hour_W": 1844.8309306875963,
+   "vs_base_pct": 0.8301915875855492
+  },
+  "grid_C10": {
+   "window_kWh": 719.483846244217,
+   "first_hour_W": 1792.157027067129,
+   "vs_base_pct": 0.010465025600936428
+  },
+  "grid_C90": {
+   "window_kWh": 719.2623518488557,
+   "first_hour_W": 1792.3941474601481,
+   "vs_base_pct": -0.020323375829178758
+  },
+  "timestep_10": {
+   "window_kWh": 719.4085599542425,
+   "first_hour_W": 1792.2754464939985,
+   "vs_base_pct": 0.0
+  },
+  "timestep_30": {
+   "window_kWh": 719.4214440604106,
+   "first_hour_W": 1792.2749433388992,
+   "vs_base_pct": 0.001790930339917729
+  }
+ },
+ "params": {
+  "moon": {
+   "base": {
+    "cooling_kWh": 3722.9510403610607,
+    "vs_base_pct": 0.0
+   },
+   "regolith_albedo_0.07": {
+    "cooling_kWh": 3728.9252512803255,
+    "vs_base_pct": 0.1604697685920975
+   },
+   "regolith_albedo_0.17": {
+    "cooling_kWh": 3716.837560677426,
+    "vs_base_pct": -0.16421058502670283
+   },
+   "regolith_emissivity_0.90": {
+    "cooling_kWh": 3732.296821570887,
+    "vs_base_pct": 0.25103153677035195
+   },
+   "regolith_emissivity_0.99": {
+    "cooling_kWh": 3715.995324096896,
+    "vs_base_pct": -0.18683340685269334
+   },
+   "horizon_5deg": {
+    "cooling_kWh": 3710.694080246495,
+    "vs_base_pct": -0.32922700249576886
+   },
+   "shell_solar_abs_0.3": {
+    "cooling_kWh": 3698.770640901355,
+    "vs_base_pct": -0.6494954996067004
+   },
+   "shell_solar_abs_0.5": {
+    "cooling_kWh": 3744.111676079696,
+    "vs_base_pct": 0.5683834004054811
+   },
+   "shell_emissivity_0.80": {
+    "cooling_kWh": 3740.4905024229975,
+    "vs_base_pct": 0.47111718289574167
+   },
+   "mli_R_-25pct": {
+    "cooling_kWh": 3597.9765151745223,
+    "vs_base_pct": -3.3568672762996687
+   },
+   "mli_R_+25pct": {
+    "cooling_kWh": 3803.6070149877783,
+    "vs_base_pct": 2.166452734734192
+   }
+  },
+  "mars": {
+   "base": {
+    "cooling_kWh": 719.4085599542425,
+    "vs_base_pct": 0.0
+   },
+   "thermal_inertia_250": {
+    "cooling_kWh": 714.882391768078,
+    "vs_base_pct": -0.6291512831668733
+   },
+   "thermal_inertia_450": {
+    "cooling_kWh": 722.321951265041,
+    "vs_base_pct": 0.4049703427192686
+   },
+   "regolith_albedo_0.10": {
+    "cooling_kWh": 723.1259701504349,
+    "vs_base_pct": 0.5167314378951682
+   },
+   "regolith_albedo_0.18": {
+    "cooling_kWh": 715.5739235005567,
+    "vs_base_pct": -0.5330262478291492
+   },
+   "dust_tau_0.3": {
+    "cooling_kWh": 740.5049075940541,
+    "vs_base_pct": 2.9324571341149186
+   },
+   "dust_tau_1.5": {
+    "cooling_kWh": 700.7085054303392,
+    "vs_base_pct": -2.599365029114009
+   },
+   "wind_1": {
+    "cooling_kWh": 720.0553016011885,
+    "vs_base_pct": 0.08989907584462387
+   },
+   "wind_6": {
+    "cooling_kWh": 718.760559748304,
+    "vs_base_pct": -0.0900740194111238
+   }
+  }
+ },
+ "spinup": {
+  "mars_long": {
+   "cooling_kWh": 718.9175940010284,
+   "inner_face_C": 25.76435470246915
+  },
+  "mars_short": {
+   "cooling_kWh": 719.4085599542425,
+   "inner_face_C": 25.779064871411027
+  },
+  "moon_long": {
+   "cooling_kWh": 2276.5011098607274,
+   "inner_face_C": 31.094700746040594
+  },
+  "moon_short": {
+   "cooling_kWh": 2304.116034011132,
+   "inner_face_C": 31.231813902153235
+  },
+  "mars_short_vs_long_pct": 0.06829238250822822,
+  "moon_short_vs_long_pct": 1.2130424198252943
+ }
+}

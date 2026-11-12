@@ -18,7 +18,7 @@ independently; here it serves as a code-to-code reference and as a convenient wr
 The engine is also checked against independent references: JPL Horizons (sun position), Diviner (lunar regolith
 temperatures), closed-form exterior balances and NIST CO2 properties ([VERIFICATION.md](VERIFICATION.md)).
 
-**Start here:** [TUTORIAL.md](TUTORIAL.md) builds the engine and runs a NASA-class four-crew lunar habitat.
+**Start here:** [TUTORIAL.md](TUTORIAL.md) builds the engine and runs a NASA-informed four-crew lunar habitat.
 
 ## What changes in planetary mode
 
@@ -76,13 +76,13 @@ set EXOBEM_PATH=<path to a TensorBuildLab/ExoBEM checkout>
 python planetary/cases/make_cases.py            # regolith-module cases + Python references + PWF files
 build\Products\energyplus.exe -d out_moon planetary/cases/moon_equator/moon_equator_pwf.idf
 python planetary/cases/compare.py moon_equator out_moon
-python planetary/cases/make_habitat_case.py     # NASA-class lunar habitat (IDF from the ExoBEM model) + reference
+python planetary/cases/make_habitat_case.py     # NASA-informed lunar habitat (IDF from the ExoBEM model) + reference
 python planetary/tools/earth_regression.py      # baseline v26.2.0 vs fork on Earth example files
 ```
 
 ## Status
 
-M2 (this branch): Moon and Mars habitats with opaque envelopes, CTF or CondFD conduction, internal gains, ideal
-loads with humidity control, PV in vacuum, batteries; planetary weather files with no EPW. Planned: sol clock for
+M2e (this branch, tag `thermonaut-m2e`): Moon and Mars habitats with opaque envelopes, CTF or CondFD conduction, internal gains, ideal
+loads with humidity control, PV in vacuum, batteries; planetary weather files with no EPW and physical range checks; an input validator (with an outdoor-air backstop) that refuses every object the audit found cannot be right off-Earth, including windows; 23 planetary tests (`tests/run_planetary_tests.py`). Planned: sol clock for
 Mars, cabin gas-mixture psychrometrics, gravity in every buoyancy model, planetary design days, a space-radiator
 plant component and windows. See [`DESIGN.md`](DESIGN.md).

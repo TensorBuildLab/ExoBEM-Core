@@ -1,0 +1,94 @@
+{
+ "total": 271,
+ "by_disposition": {
+  "modified": 62,
+  "refused": 91,
+  "avoided": 65,
+  "deferred": 22,
+  "harmless": 31
+ },
+ "by_area": {
+  "01": {
+   "modified": 13,
+   "refused": 4,
+   "avoided": 20,
+   "deferred": 0,
+   "harmless": 3
+  },
+  "02": {
+   "modified": 16,
+   "refused": 9,
+   "avoided": 7,
+   "deferred": 6,
+   "harmless": 2
+  },
+  "03": {
+   "modified": 10,
+   "refused": 20,
+   "avoided": 11,
+   "deferred": 8,
+   "harmless": 7
+  },
+  "04": {
+   "modified": 20,
+   "refused": 9,
+   "avoided": 12,
+   "deferred": 3,
+   "harmless": 5
+  },
+  "05": {
+   "modified": 1,
+   "refused": 23,
+   "avoided": 3,
+   "deferred": 0,
+   "harmless": 5
+  },
+  "06": {
+   "modified": 2,
+   "refused": 26,
+   "avoided": 12,
+   "deferred": 5,
+   "harmless": 9
+  }
+ },
+ "by_priority": {
+  "P0": {
+   "modified": 42,
+   "refused": 10,
+   "avoided": 21,
+   "deferred": 2,
+   "harmless": 1
+  },
+  "P1": {
+   "modified": 13,
+   "refused": 44,
+   "avoided": 25,
+   "deferred": 12,
+   "harmless": 3
+  },
+  "P2": {
+   "modified": 5,
+   "refused": 37,
+   "avoided": 14,
+   "deferred": 8,
+   "harmless": 15
+  },
+  "none": {
+   "modified": 2,
+   "refused": 0,
+   "avoided": 5,
+   "deferred": 0,
+   "harmless": 12
+  }
+ },
+ "location": {
+  "ok": 264,
+  "moved": 3,
+  "not_found": 0,
+  "n/a": 4
+ },
+ "open_P0": [
+  "A04-S07",
+  "A04-S08"
+ ]
+}
